@@ -1,0 +1,7 @@
+{
+  "name": "web-stgo",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
