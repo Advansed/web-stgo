@@ -3,7 +3,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { LoginCredentials, AuthState } from '../types/User';
 import { login } from './api';
-import { useToast } from '../components/Toast';
 
 
 interface LoginStore extends AuthState {
@@ -12,7 +11,6 @@ interface LoginStore extends AuthState {
     logout:             () => void;
     setLoading:         (loading: boolean) => void;
 }
-    const toast = useToast()
 
 export const useLoginStore = create<LoginStore>()(
   persist(
@@ -30,6 +28,7 @@ export const useLoginStore = create<LoginStore>()(
         set({ isLoading: true, error: null });
         
         try {
+          console.log('login', credentials)
           const res = await login( credentials.username, credentials.password )
           
             if(res.success){
@@ -42,10 +41,8 @@ export const useLoginStore = create<LoginStore>()(
                     error:              null
                 });
 
-                toast.success("Успешно авторизирован")
                 return true
             } else {
-                toast.error("Ошибка авторизации:" + res.message )
 
                 return false
 
@@ -56,7 +53,6 @@ export const useLoginStore = create<LoginStore>()(
             isLoading: false, 
           });
             
-          toast.error("Ошибка авторизации:" + error.message )
 
           return false
         }
@@ -83,10 +79,12 @@ export const useLoginStore = create<LoginStore>()(
     {
       name: 'ads-auth-storage',
       partialize: (state) => ({ 
-        user: state.user,
-        token: state.token,
-        isAuthenticated: state.isAuthenticated
+        user:             state.user,
+        token:            state.token,
+        isAuthenticated:  state.isAuthenticated
       })
     }
   )
 );
+
+export const useAuth = () => useLoginStore((state) => state.auth);

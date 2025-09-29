@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Login.css';
 import { useLogin } from './useLogin';
+import { useToast } from '../Toast';
 
 
 const Login: React.FC = () => {
@@ -8,11 +9,14 @@ const Login: React.FC = () => {
   const [password, setPassword]         = useState('');
   const [rememberMe, setRememberMe]     = useState(false);
     const { login, isLoading }          = useLogin()
+    const toast = useToast()
 
     const handleSubmit = async() => {
-        await login( { username: username, password: password } )
+        const res = await login( { username: username, password: password } )
+        if(res) toast.success("Авторизация успешна")
+        else toast.success("Ошибка авторизации")
     }   
-
+    
   return (
     <div className="login-container">
       <div className="login-card">

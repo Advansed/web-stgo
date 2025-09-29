@@ -2,17 +2,10 @@
 import { useCallback }          from 'react';
 import { useLoginStore }        from '../../Store/loginStore';
 import { LoginCredentials }     from '../../types/User';
-import { TResponse } from '../../Store/api';
 
 export const useLogin = () => {
   const { 
-    user, 
-    token, 
-    isAuthenticated, 
-    isLoading, 
-    error,
-    login, 
-    logout
+    user, token, isAuthenticated, isLoading, error, login, logout
   } = useLoginStore();
 
   const handleLogin = useCallback(async (credentials: LoginCredentials) => {

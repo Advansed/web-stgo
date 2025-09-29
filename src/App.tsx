@@ -33,12 +33,20 @@ import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import { useAuth } from './Store/loginStore';
+import Login from './components/Login/Login';
+import { ToastProvider } from './components/Toast';
 
 setupIonicReact();
 
-const App: React.FC = () => {
-  return (
-    <IonApp>
+
+const AppContent: React.FC = () => {
+  const auth = false //useAuth()
+
+  console.log("auth", auth)
+  if( !auth )
+    return <Login />
+  else return (
       <IonReactRouter>
         <IonSplitPane contentId="main">
           <Menu />
@@ -52,7 +60,16 @@ const App: React.FC = () => {
           </IonRouterOutlet>
         </IonSplitPane>
       </IonReactRouter>
-    </IonApp>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <IonApp>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </IonApp>  
   );
 };
 
