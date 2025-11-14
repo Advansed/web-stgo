@@ -2,6 +2,7 @@ import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonTitle, Io
 import { useParams } from 'react-router';
 import ExploreContainer from '../components/ExploreContainer';
 import './Page.css';
+import { Lics } from '../components/Lics';
 
 const Page: React.FC = () => {
 
@@ -19,12 +20,13 @@ const Page: React.FC = () => {
       </IonHeader>
 
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">{name}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <ExploreContainer name={name} />
+        {
+            name === 'invoices'
+              ? <></>
+          : name === 'lics'
+              ? <Lics  />
+          : <></>
+        }
       </IonContent>
     </IonPage>
   );

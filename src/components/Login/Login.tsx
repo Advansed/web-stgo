@@ -1,34 +1,29 @@
 import React, { useState } from 'react';
 import './Login.css';
 import { useLogin } from './useLogin';
-import { useToast } from '../Toast';
-
 
 const Login: React.FC = () => {
-  const [username, setUsername]         = useState('');
-  const [password, setPassword]         = useState('');
-  const [rememberMe, setRememberMe]     = useState(false);
-    const { login, isLoading }          = useLogin()
-    const toast = useToast()
+  const { username, setUsername, password, setPassword, rememberMe, handleMemberMe, login, loading } = useLogin();
 
-    const handleSubmit = async() => {
-        const res = await login( { username: username, password: password } )
-        if(res) toast.success("Авторизация успешна")
-        else toast.success("Ошибка авторизации")
-    }   
-    
+  const handleSubmit = async () => {
+    login({ login: username, password });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !loading) {
+      handleSubmit();
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="login-card">
-        {/* Заголовок с логотипом */}
         <div className="login-header">
-          {/* {logo && <img src={logo} alt="Logo" className="login-logo" />} */}
-          <h1 className="login-title">{ "Сахатранснефтегаз" }</h1>
+          <h1 className="login-title">Сахатранснефтегаз</h1>
           <p className="login-subtitle">Вход в систему</p>
         </div>
 
-        {/* Форма входа */}
-        <form onSubmit={handleSubmit} className="login-form">
+        <div className="login-form">
           <div className="form-group">
             <label htmlFor="username" className="form-label">
               Логин или Email
@@ -38,10 +33,10 @@ const Login: React.FC = () => {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="form-input"
               placeholder="Введите ваш логин или email"
-              required
-              disabled={isLoading}
+              disabled={loading}
             />
           </div>
 
@@ -54,10 +49,10 @@ const Login: React.FC = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="form-input"
               placeholder="Введите ваш пароль"
-              required
-              disabled={isLoading}
+              disabled={loading}
             />
           </div>
 
@@ -66,8 +61,8 @@ const Login: React.FC = () => {
               <input
                 type="checkbox"
                 checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={isLoading}
+                onChange={(e) => handleMemberMe(e.target.checked)}
+                disabled={loading}
               />
               <span>Запомнить меня</span>
             </label>
@@ -76,16 +71,15 @@ const Login: React.FC = () => {
             </a>
           </div>
 
-          <button 
-            type="submit" 
-            className={`login-button ${isLoading ? 'loading' : ''}`}
-            disabled={isLoading}
+          <button
+            onClick={handleSubmit}
+            className={`login-button ${loading ? 'loading' : ''}`}
+            disabled={loading}
           >
-            {isLoading ? 'Вход...' : 'Войти'}
+            {loading ? 'Вход...' : 'Войти'}
           </button>
-        </form>
+        </div>
 
-        {/* Дополнительная информация */}
         <div className="login-footer">
           <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
           <div className="support-info">

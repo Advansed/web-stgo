@@ -1,79 +1,24 @@
 // stores/loginStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { LoginCredentials, AuthState } from '../types/User';
-import { login } from './api';
 
 
-interface LoginStore extends AuthState {
-    auth:               boolean;
-    login:              (credentials: LoginCredentials) => Promise<boolean>;
-    logout:             () => void;
-    setLoading:         (loading: boolean) => void;
-}
-
-export const useLoginStore = create<LoginStore>()(
+export const useLoginStore = create<any>()(
   persist(
     (set, get) => ({
       // Initial state
       auth:             false,
       user:             null,
       token:            null,
-      isAuthenticated:  false,
       isLoading:        false,
-      error:            null,
 
-      // Actions
-      login: async (credentials: LoginCredentials) => {
-        set({ isLoading: true, error: null });
-        
-        try {
-          console.log('login', credentials)
-          const res = await login( credentials.username, credentials.password )
-          
-            if(res.success){
-                set({
-                    auth:               true,
-                    user:               res.data,
-                    token:              res.data.token,
-                    isAuthenticated:    true,
-                    isLoading:          false,
-                    error:              null
-                });
+      setAuth:  ( auth: boolean) => set({ auth }),
 
-                return true
-            } else {
+      setUser:  ( data: any) => set({ user: data }),
 
-                return false
+      setToken:  ( token: string) => set({ token }),
 
-            }
-
-        } catch (error:any) {
-          set({ 
-            isLoading: false, 
-          });
-            
-
-          return false
-        }
-      },
-
-      logout: () => {
-        set({
-          user:             null,
-          token:            null,
-          isAuthenticated:  false,
-          isLoading:        false,
-          error:            null
-        });
-        
-        // Очищаем rememberMe
-        localStorage.removeItem('ads_rememberMe');
-      },
-
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading });
-      }
+      setLoading: (loading: boolean) => set({ isLoading: loading })
 
     }),
     {
@@ -87,4 +32,26 @@ export const useLoginStore = create<LoginStore>()(
   )
 );
 
-export const useAuth = () => useLoginStore((state) => state.auth);
+export const    useAuth = () => {
+    const auth    = useLoginStore( (state) => state.auth );
+    const setAuth = useLoginStore( (state) => state.setAuth );
+    return { auth, setAuth };
+};
+
+export const    useToken = () => {
+  const token    = useLoginStore( (state) => state.token );
+  const setToken = useLoginStore( (state) => state.setToken );
+  return { token, setToken };
+};
+
+export const    useUser = () => {
+  const user    = useLoginStore( (state) => state.user );
+  const setUser = useLoginStore( (state) => state.setUser );
+  return { user, setUser };
+};
+
+export const    useLoading = () => {
+  const loading    = useLoginStore( (state) => state.isLoading );
+  const setLoading = useLoginStore( (state) => state.setLoading );
+  return { loading, setLoading };
+};

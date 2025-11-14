@@ -41,7 +41,7 @@ setupIonicReact();
 
 
 const AppContent: React.FC = () => {
-  const auth = false //useAuth()
+  const { auth } = useAuth()
 
   console.log("auth", auth)
   if( !auth )
