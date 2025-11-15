@@ -1,68 +1,47 @@
+// LicsList.tsx
 import React from 'react';
 import styles from './List.module.css';
+import LicItem, { LicAccount, LicItemProps } from './LicItem';
+import { formatAddress } from '../../useLics';
 
-const LicsList: React.FC<any> = ({
+export interface LicsListProps {
+  data: LicAccount[];
+  loading: boolean;
+  onLicClick: (lic: LicAccount) => void;
+  onLicDel: (licCode: string) => void;
+  formatSum: (amount: number) => string;
+  getTotalDebt: (debts: LicAccount['debts']) => number;
+  getDebtStatus: (debts: LicAccount['debts']) => 'none' | 'positive' | 'negative';
+}
+
+const LicsList: React.FC<LicsListProps> = ({
   data,
   loading,
   onLicClick,
   onLicDel,
   formatSum,
   getTotalDebt,
-  formatAddress,
   getDebtStatus
 }) => {
-
-   const handleDelete = (licAccount: any, event: React.MouseEvent) => {
-    event.stopPropagation(); // Предотвращаем клик по карточке
-    onLicDel( licAccount.code )
-  };
-
   if (loading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
 
   return (
-    <div className={styles.container}>
-      <h2 className={styles.title}>Лицевые счета</h2>
+    <div className={styles.licsContainer}>
       
-      <div className={styles.itemsContainer}>
-        {data.map((lic:any) => {
-          const totalDebt = getTotalDebt(lic.debts);
-          const debtStatus = getDebtStatus(lic.debts);
-          
-          return (
-            <div 
-              key={lic.id}
-              className={`${styles.item} ${styles[`debt${debtStatus.charAt(0).toUpperCase() + debtStatus.slice(1)}`]}`}
-              onClick={() => onLicClick(lic)}
-            >
-              <div className={styles.itemHeader}>
-                <div className={styles.code}>{lic.code}</div>
-                <div className={styles.debtContainer}>
-                  <span className={styles.debtSum}>
-                    {formatSum(totalDebt)}
-                  </span>
-                  {debtStatus === 'positive' && (
-                    <span className={styles.debtIndicator}>●</span>
-                  )}
-                </div>
-                 <button 
-                    className={styles.deleteButton}
-                    onClick={(e) => handleDelete( lic , e)}
-                    title="Удалить лицевой счет"
-                  >
-                    🗑️
-                  </button>
-              </div>
-              
-              <div className={styles.itemBody}>
-                <div className={styles.name}>{lic.name}</div>
-                <div className={styles.address}>{formatAddress(lic.address_go)}</div>
-                <div className={styles.plot}>Участок: {lic.plot}</div>
-              </div>
-            </div>
-          );
-        })}
+      <div className={styles.licsList}>
+        {data.map((lic) => (
+          <LicItem
+            key={lic.id}
+            lic={lic}
+            onLicClick={onLicClick}
+            onLicDel={onLicDel}
+            formatSum={formatSum}
+            getTotalDebt={getTotalDebt}
+            getDebtStatus={getDebtStatus}
+          />
+        ))}
       </div>
       
       {data.length === 0 && (

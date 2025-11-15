@@ -12,7 +12,7 @@ import {
 } from '@ionic/react';
 import { closeOutline, chevronDown, chevronUp } from 'ionicons/icons';
 import './LicForm.css';
-import { formatDate, formatSum, getDebtStatus, getTotalDebt } from '../../../Login/useLogin';
+import { formatDate, formatSum, getDebtStatus, getTotalDebt } from '../../useLics';
 
 interface LicFormProps {
   isOpen: boolean;

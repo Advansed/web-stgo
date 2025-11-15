@@ -4,7 +4,7 @@ import FindLics from './components/FindLic/FindLics';
 import { useLics } from './useLics';
 import styles from './Lics.module.css';
 import { LicForm } from './components/LicsForm';
-import { formatAddress, formatSum, getDebtStatus, getTotalDebt } from '../Login/useLogin';
+import { formatAddress, formatSum, getDebtStatus, getTotalDebt } from './useLics';
 
 const Lics: React.FC = () => {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
@@ -70,7 +70,6 @@ const Lics: React.FC = () => {
           onLicDel        = { handleLicDel }
           formatSum       = { formatSum }
           getTotalDebt    = { getTotalDebt }
-          formatAddress   = { formatAddress }
           getDebtStatus   = { getDebtStatus }
         />
       </div>
