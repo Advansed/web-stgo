@@ -12,7 +12,7 @@ export const useLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   
   const { user, setUser }           = useUser()
-  const { setAuth }           = useAuth()
+  const { setAuth }                 = useAuth()
   const { loading, setLoading }     = useLoading()
   const { token, setToken }         = useToken();
   const toast                       = useToast()
@@ -28,7 +28,7 @@ export const useLogin = () => {
 
   },[])
 
-  const handleLogin     = useCallback( async (data:any) => {
+  const handleLogin                 = useCallback( async (data:any) => {
 
     setLoading( true )
     
@@ -65,7 +65,7 @@ export const useLogin = () => {
   }, [rememberMe, password, username]);
 
 
-  const handleMemberMe  = useCallback( (data: boolean) => {
+  const handleMemberMe              = useCallback( (data: boolean) => {
       console.log("member", data)
       if(!data){
         localStorage.removeItem("mi.login")  

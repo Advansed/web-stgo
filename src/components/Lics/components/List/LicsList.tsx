@@ -1,17 +1,16 @@
 // LicsList.tsx
 import React from 'react';
 import styles from './List.module.css';
-import LicItem, { LicAccount, LicItemProps } from './LicItem';
-import { formatAddress } from '../../useLics';
+import LicItem, { LicAccount } from './LicItem';
 
 export interface LicsListProps {
-  data: LicAccount[];
-  loading: boolean;
-  onLicClick: (lic: LicAccount) => void;
-  onLicDel: (licCode: string) => void;
-  formatSum: (amount: number) => string;
-  getTotalDebt: (debts: LicAccount['debts']) => number;
-  getDebtStatus: (debts: LicAccount['debts']) => 'none' | 'positive' | 'negative';
+  data:           LicAccount[];
+  loading:        boolean;
+  onLicClick:     ( lic: LicAccount ) => void;
+  onLicDel:       ( licCode: string ) => void;
+  formatSum:      ( amount: number ) => string;
+  getTotalDebt:   ( debts: LicAccount['debts'] ) => number;
+  getDebtStatus:  ( debts: LicAccount['debts'] ) => 'none' | 'positive' | 'negative';
 }
 
 const LicsList: React.FC<LicsListProps> = ({
@@ -33,13 +32,13 @@ const LicsList: React.FC<LicsListProps> = ({
       <div className={styles.licsList}>
         {data.map((lic) => (
           <LicItem
-            key={lic.id}
-            lic={lic}
-            onLicClick={onLicClick}
-            onLicDel={onLicDel}
-            formatSum={formatSum}
-            getTotalDebt={getTotalDebt}
-            getDebtStatus={getDebtStatus}
+              key           = { lic.id }
+              lic           = { lic }
+              onLicClick    = { onLicClick }
+              onLicDel      = { onLicDel }
+              formatSum     = { formatSum }
+              getTotalDebt  = { getTotalDebt }
+              getDebtStatus = { getDebtStatus }
           />
         ))}
       </div>

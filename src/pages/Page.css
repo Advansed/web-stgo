@@ -1,0 +1,268 @@
+/* Page.css */
+.page-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.page-toolbar {
+  --background: transparent;
+  --border-color: transparent;
+  --min-height: 70px;
+  padding: 0 16px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 70px;
+  gap: 16px;
+}
+
+/* Левая часть - логотип */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.company-icon {
+  font-size: 24px;
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 8px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.company-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.company-name {
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+/* Центральная часть - заголовок */
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.page-title {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Правая часть - пользователь и кнопки */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.user-info-compact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 25px;
+  backdrop-filter: blur(10px);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-icon {
+  font-size: 16px;
+  color: white;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Кнопки действий */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.action-icon {
+  font-size: 20px;
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 8px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.action-icon:active {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(0.95);
+}
+
+.back-icon {
+  font-size: 20px;
+}
+
+/* Существующие стили */
+.w-15 {
+  width: 20px;
+}
+
+.h-15 {
+  height: 20px;
+}
+
+.ml-05 {
+  margin-left: 8px;
+}
+
+/* Контент */
+ion-content {
+  --background: #f7fafc;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .page-toolbar {
+    padding: 0 12px;
+    --min-height: 60px;
+  }
+  
+  .header-content {
+    min-height: 60px;
+    gap: 12px;
+  }
+  
+  .company-icon {
+    font-size: 20px;
+    padding: 6px;
+  }
+  
+  .company-name {
+    font-size: 0.9rem;
+  }
+  
+  .page-title {
+    font-size: 1.1rem;
+  }
+  
+  .user-info-compact {
+    gap: 8px;
+    padding: 5px 10px;
+  }
+  
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .avatar-icon {
+    font-size: 14px;
+  }
+  
+  .user-name {
+    font-size: 0.8rem;
+  }
+  
+  .action-icon {
+    font-size: 18px;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .company-name {
+    display: none;
+  }
+  
+  .page-title {
+    font-size: 1rem;
+  }
+  
+  .user-name {
+    display: none;
+  }
+  
+  .user-info-compact {
+    padding: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-toolbar {
+    padding: 0 8px;
+  }
+  
+  .header-content {
+    gap: 8px;
+  }
+  
+  .header-right {
+    gap: 8px;
+  }
+  
+  .action-buttons {
+    gap: 6px;
+  }
+  
+  .action-icon {
+    font-size: 16px;
+    padding: 5px;
+  }
+}
+
+/* Анимации */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-header {
+  animation: fadeInDown 0.4s ease-out;
+}

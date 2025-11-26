@@ -33,15 +33,15 @@ import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 import './theme/variables.css';
-import { useAuth } from './Store/loginStore';
 import Login from './components/Login/Login';
 import { ToastProvider } from './components/Toast';
+import { useApp } from './useApp';
 
 setupIonicReact();
 
 
 const AppContent: React.FC = () => {
-  const { auth } = useAuth()
+  const { auth } = useApp()
 
   console.log("auth", auth)
   if( !auth )
@@ -49,12 +49,12 @@ const AppContent: React.FC = () => {
   else return (
       <IonReactRouter>
         <IonSplitPane contentId="main">
-          <Menu />
+          {/* <Menu /> */}
           <IonRouterOutlet id="main">
             <Route path="/" exact={true}>
-              <Redirect to="/folder/Inbox" />
+              <Redirect to="/invoices" />
             </Route>
-            <Route path="/folder/:name" exact={true}>
+            <Route path="/:name" exact={true}>
               <Page />
             </Route>
           </IonRouterOutlet>

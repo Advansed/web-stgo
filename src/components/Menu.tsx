@@ -34,6 +34,7 @@ import {
 } from 'ionicons/icons';
 import './Menu.css';
 import { useUser } from '../Store/loginStore';
+import { useRoutes } from '../Store/navigationStore';
 
 interface AppPage {
   url: string;
@@ -45,43 +46,43 @@ interface AppPage {
 const appPages: AppPage[] = [
   {
     title: 'Главная',
-    url: '/folder/Home',
+    url: '/invoices',
     iosIcon: homeOutline,
     mdIcon: homeSharp
   },
   {
     title: 'Лицевые счета',
-    url: '/folder/lics',
+    url: '/lics',
     iosIcon: documentTextOutline,
     mdIcon: documentTextSharp
   },
   {
     title: 'Сообщения',
-    url: '/folder/Inbox',
+    url: '/inbox',
     iosIcon: mailOutline,
     mdIcon: mailSharp
   },
   {
     title: 'Проекты',
-    url: '/folder/Projects',
+    url: '/projects',
     iosIcon: businessOutline,
     mdIcon: businessOutline
   },
   {
     title: 'Команда',
-    url: '/folder/Team',
+    url: '/team',
     iosIcon: peopleOutline,
     mdIcon: peopleSharp
   },
   {
     title: 'Избранное',
-    url: '/folder/Favorites',
+    url: '/favorites',
     iosIcon: heartOutline,
     mdIcon: heartSharp
   },
   {
     title: 'Архив',
-    url: '/folder/Archived',
+    url: '/archived',
     iosIcon: archiveOutline,
     mdIcon: archiveSharp
   }
@@ -90,8 +91,9 @@ const appPages: AppPage[] = [
 const labels = ['Срочные', 'Важные', 'Заметки', 'Работа', 'Встречи', 'Напоминания'];
 
 const Menu: React.FC = () => {
-  const location = useLocation();
-  const { user } = useUser()
+  const location      = useLocation();
+  const { user }      = useUser()
+  const { setRoute }  = useRoutes()
 
   return (
     <IonMenu contentId="main" type="overlay">
@@ -122,13 +124,14 @@ const Menu: React.FC = () => {
           <IonListHeader>Основное</IonListHeader>
           {appPages.map((appPage, index) => {
             return (
-              <IonMenuToggle key={index} autoHide={false}>
+              <IonMenuToggle key  = { index } autoHide={false}>
                 <IonItem 
-                  className={location.pathname === appPage.url ? 'selected' : ''} 
-                  routerLink={appPage.url} 
-                  routerDirection="none" 
-                  lines="none" 
-                  detail={false}
+                  className       = { location.pathname === appPage.url ? 'selected' : '' } 
+                  routerLink      = { appPage.url } 
+                  routerDirection = "none" 
+                  lines           = "none" 
+                  detail          = { false }
+                  onClick         = { () => { setRoute( { route: appPage.url, page: 0 } )} }
                 >
                   <IonIcon aria-hidden="true" slot="start" ios={appPage.iosIcon} md={appPage.mdIcon} />
                   <IonLabel>{appPage.title}</IonLabel>

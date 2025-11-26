@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { post } from './api';
 
 
 interface LicsState {
@@ -14,6 +15,7 @@ interface LicsActions {
   setData:      ( data: any) => void;
   setItem:      ( item: any) => void;
   setLoading:   ( loading: boolean) => void;
+  loadLics:     ( token: string) => any;
 }
 
 type LicsStore = LicsState & LicsActions;
@@ -23,37 +25,59 @@ type LicsStore = LicsState & LicsActions;
 // ============================================
 
 export const useLicsStore = create<LicsStore>()(
+  
   devtools(
     (set) => ({
       data:         [],
-      item:         undefined,
       loading:      false,
 
       setData:      (data) => set({ data }),
-      setItem:      (item) => set({ item }),
-      setLoading:   (loading) => set({ loading })
+      setLoading:   (loading) => set({ loading }),
+
+      loadLics:     async (token) => {
+        set({ loading: true })
+
+        try {
+            const res = await post('get_lics', { token })
+            console.log("lics", res.data)
+            if (res.success) {
+              set({ data: res.data })
+              return res
+            } else {
+              return res  
+            } 
+        } catch (err:any) {
+          return {success: false, message: "Ошибка получение данных"}
+        } finally {
+          set({ loading: false })
+        }
+
+      }
 
     }),
     { name: 'lics-store' }
   )
+  
 );
 
 
-export const    useData = () => {
+export const useData      = () => {
     const data    = useLicsStore( (state) => state.data );
     const setData = useLicsStore( (state) => state.setData );
     return { data, setData };
 };
 
-export const    useItem = () => {
-    const item    = useLicsStore( (state) => state.item );
-    const setItem = useLicsStore( (state) => state.setItem );
-    return { item, setItem };
-};
 
-
-export const    useLoading = () => {
+export const useLoading   = () => {
   const loading    = useLicsStore( (state) => state.loading );
   const setLoading = useLicsStore( (state) => state.setLoading );
   return { loading, setLoading };
 };
+
+
+ export const useGetLics    = () => {
+    const loadLics = useLicsStore( (state) => state.data )    
+    
+    return loadLics
+
+ };

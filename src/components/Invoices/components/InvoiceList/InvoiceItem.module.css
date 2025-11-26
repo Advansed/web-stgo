@@ -1,0 +1,285 @@
+/* InvoiceItem.module.css */
+.invoiceCard {
+  --border-radius: 12px;
+  --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  --padding: 20px;
+  
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin: 12px auto;
+  background: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid var(--ion-color-primary);
+  position: relative;
+  overflow: hidden;
+  max-width: 400px;
+  width: 100%;
+  border: 1px solid #e1e5e9;
+}
+
+.invoiceCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ion-color-primary), transparent);
+  opacity: 0.15;
+}
+
+.invoiceCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.invoiceCard:active {
+  transform: translateY(0);
+}
+
+/* Статусы */
+.invoiceCard[data-status="danger"] {
+  border-left-color: var(--ion-color-danger);
+}
+
+.invoiceCard[data-status="warning"] {
+  border-left-color: var(--ion-color-warning);
+}
+
+.invoiceCard[data-status="success"] {
+  border-left-color: var(--ion-color-success);
+}
+
+.invoiceCard[data-status="primary"] {
+  border-left-color: var(--ion-color-primary);
+}
+
+.invoiceCard[data-status="medium"] {
+  border-left-color: var(--ion-color-medium);
+}
+
+.cardContentWrapper {
+  padding: var(--padding);
+}
+
+/* Заголовок карточки */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.headerLeft {
+  flex: 1;
+}
+
+.invoiceNumber {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.invoiceDate {
+  font-size: 0.875rem;
+  color: #718096;
+  margin: 0;
+  font-weight: 500;
+}
+
+.statusBadge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  margin: 0;
+}
+
+/* Основной контент */
+.cardContent {
+  margin-bottom: 16px;
+}
+
+.infoSection {
+  margin-bottom: 16px;
+}
+
+.infoSection:last-child {
+  margin-bottom: 0;
+}
+
+.infoLabel {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.labelIcon {
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+.infoValue {
+  font-size: 0.95rem;
+  color: #2d3748;
+  line-height: 1.4;
+  margin: 0;
+  font-weight: 500;
+}
+
+.addressValue {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.datesRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.additionalInfo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+/* Футер */
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.accountInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accountItem {
+  font-size: 0.875rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+.plotInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plotBadge {
+  background: #f7fafc;
+  color: #2d3748;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+}
+
+/* Иконки действий */
+.actionButtons {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.actionButton {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --border-radius: 8px;
+  height: 38px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  flex: 1;
+  margin: 0;
+}
+
+.callButton {
+  --background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  --background-hover: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%);
+  --background-activated: linear-gradient(135deg, #2c5aa0 0%, #2a4365 100%);
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .invoiceCard {
+    margin: 8px 12px;
+    --padding: 16px;
+    max-width: calc(100% - 24px);
+  }
+  
+  .cardHeader {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  
+  .statusBadge {
+    align-self: flex-start;
+  }
+  
+  .datesRow,
+  .additionalInfo {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .actionButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .invoiceCard {
+    --padding: 14px;
+  }
+  
+  .invoiceNumber {
+    font-size: 1.1rem;
+  }
+  
+  .datesRow,
+  .additionalInfo {
+    gap: 10px;
+  }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.invoiceCard {
+  animation: fadeIn 0.4s ease-out;
+}

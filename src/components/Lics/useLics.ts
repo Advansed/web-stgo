@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useData, useItem, useLoading } from '../../Store/licsStore';
+import {  useData, useGetLics, useLoading } from '../../Store/licsStore';
 import { post } from '../../Store/api';
 import { useToken } from '../../Store/loginStore';
 import { useToast } from '../Toast';
+import { useAdd, useItem } from '../../Store/navigationStore';
 
 export const formatSum            = (sum: number): string => {
   return new Intl.NumberFormat('ru-RU', {
@@ -48,31 +49,18 @@ export const getDebtStatus        = (debts: any): any => {
 
 export const useLics = () => {
 
-  const { data, setData } = useData()
+  const { data, setData }       = useData()
   const { loading, setLoading } = useLoading()
-  const { item, setItem } = useItem()
-  const { token } = useToken()
-  const toast = useToast()
+  const { item, setItem }       = useItem()
+  const { token }               = useToken()
+  const loadLics                = useGetLics()
+  const toast                   = useToast()
 
-  const loadLics          = async () => {
+  const get_lics          = async () => {
     
-    setLoading(true);
-    
-    try {
-      // Здесь будет вызов API метода get_lics
-      const res = await post('get_lics', { token })
-      console.log("lics", res.data)
-      if (res.success) {
-        setData(res.data);
-      } else {
-        toast.error( res.message || 'Ошибка загрузки данных' );
-      }
-    } catch (err:any) {
-      toast.error('Error loading lics:', err.message);
-    } finally {
-      setLoading(false);
-    }
-
+    const res = await loadLics( token )
+    if(res.success) toast.success("Данные получены")
+    else toast.error(res.message)
   };
 
   
@@ -116,22 +104,13 @@ export const useLics = () => {
 
   }
 
-  
-  const handleLicClick    = ( lic: any ) => {
-    // Навигация к детальной карточке
-    setItem( lic )
-
-  };
-
 
   const refreshData       = () => {
-    loadLics();
+    get_lics()
   };
 
 
-  useEffect(() => {
-    loadLics();
-  }, []);
+
 
   return {
     data,
@@ -140,7 +119,6 @@ export const useLics = () => {
     
     setItem,
     refreshData,
-    handleLicClick,
     addLics,
     deleteLics,
   };

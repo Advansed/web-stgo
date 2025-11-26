@@ -140,7 +140,7 @@ const LicForm: React.FC<LicFormProps> = ({
                   <div className="debts-list">
                     {licAccount.debts.map((debt:any, index: number) => (
                       <div key={index} className="debt-item">
-                        <span className="debt-service">{debt.service}</span>
+                        <span className="debt-service fs-08">{debt.label}</span>
                         <span className={`debt-sum debt-${debt.sum > 0 ? 'positive' : debt.sum < 0 ? 'negative' : 'zero'}`}>
                           {formatSum(debt.sum)}
                         </span>
@@ -161,10 +161,10 @@ const LicForm: React.FC<LicFormProps> = ({
                     {licAccount.counters.map((counter:any, index:number) => (
                       <div key={index} className="counter-item">
                         <div className="counter-header">
-                          <span className="counter-code">{counter.code}</span>
-                          <span className="counter-type">{counter.tip}</span>
+                          <span className="counter-code fs-08">{counter.code}</span>
+                          <span className="counter-type fs-08">{counter.tip}</span>
                         </div>
-                        <div className="counter-name">{counter.name}</div>
+                        <div className="counter-name fs-08">{counter.name}</div>
                         <div className="counter-data">
                           <span>Пломба: {counter.seal || ''}</span>
                           <span>Дата пломбы: {formatDate(counter.seal_date || '')}</span>
@@ -214,7 +214,7 @@ const LicForm: React.FC<LicFormProps> = ({
                 isOpen={openSections.equips}
                 onToggle={() => toggleSection('equips')}
               >
-                {licAccount.equips.length > 0 ? (
+                {licAccount.equips?.length > 0 ? (
                   <div className="equips-list">
                     {licAccount.equips.map((equip:any, index:number) => (
                       <div key={index} className="equip-item">

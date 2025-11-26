@@ -1,7 +1,8 @@
 .container {
   width: 100%;
   min-height: 100vh;
-  background-color: #f8fafc;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
 }
 
 .header {
@@ -70,6 +71,35 @@
   flex: 1;
   background-color: #f8fafc;
   min-height: calc(100vh - 120px);
+}
+
+.addLicButton {
+  background-color: #2563eb; /* корпоративный синий */
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.addLicButton:hover, .addLicButton:focus {
+  background-color: #174ea6;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+}
+
+.buttonIcon {
+  font-size: 1.3em;
+  margin-right: 2px;
+  display: flex;
+  align-items: center;
 }
 
 /* Адаптивность */

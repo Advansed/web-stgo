@@ -1,0 +1,336 @@
+/* InvoiceView.module.css */
+.invoiceModal {
+  --width: 100%;
+  --max-width: 500px;
+  --height: 100%;
+  --border-radius: 0;
+  --box-shadow: none;
+}
+
+.modalHeader {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modalToolbar {
+  --background: transparent;
+  --border-color: transparent;
+  --color: white;
+}
+
+.modalTitle {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.closeButton,
+.printButton {
+  --color: white;
+  --background: rgba(255, 255, 255, 0.15);
+  --background-hover: rgba(255, 255, 255, 0.25);
+  --background-activated: rgba(255, 255, 255, 0.3);
+  --border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+}
+
+.modalContent {
+  --background: #f7fafc;
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.invoiceContainer {
+  max-width: 500px;
+  margin: 0 auto;
+  background: #f7fafc;
+  min-height: 100%;
+}
+
+/* Заголовок карточки */
+.invoiceHeader {
+  padding: 20px 20px 16px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.invoiceTitle {
+  flex: 1;
+}
+
+.invoiceTitle h2 {
+  margin: 0 0 4px 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2d3748;
+  line-height: 1.2;
+}
+
+.invoiceSubtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #718096;
+  font-weight: 500;
+}
+
+/* Статус */
+.statusChip {
+  border-radius: 20px;
+  height: 32px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.statusChip ion-icon {
+  font-size: 14px;
+}
+
+/* Список информации */
+.invoiceList {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.invoiceItem {
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  --inner-padding-end: 0px;
+  --border-style: none;
+  --background: white;
+  --min-height: 60px;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.invoiceItem:last-child {
+  border-bottom: none;
+}
+
+.invoiceItem:hover {
+  --background: #f8fafc;
+}
+
+/* Иконки */
+.invoiceItem ion-icon[slot="start"] {
+  color: #4299e1;
+  font-size: 18px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  background: #ebf8ff;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+/* Контент элементов */
+.invoiceItem ion-label {
+  margin: 0;
+}
+
+.itemHeader {
+  margin: 0 0 4px 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.itemContent {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #2d3748;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.itemSubtext {
+  margin: 6px 0 0 0;
+  font-size: 0.8rem;
+  color: #718096;
+  font-weight: 400;
+}
+
+/* Кнопки в элементах */
+.actionButton {
+  --border-radius: 8px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  height: 36px;
+  width: 36px;
+  margin: 0;
+  --background: #ebf8ff;
+  --color: #4299e1;
+  --background-hover: #bee3f8;
+  --background-activated: #90cdf4;
+}
+
+.callButton {
+  --border-radius: 8px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  height: 36px;
+  margin: 0;
+  --background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  --background-hover: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  --background-activated: linear-gradient(135deg, #2f855a 0%, #276749 100%);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Секции */
+.infoSection {
+  margin-bottom: 8px;
+}
+
+.infoSection:last-child {
+  margin-bottom: 0;
+}
+
+/* Бейджи */
+.infoBadge {
+  background: #edf2f7;
+  color: #4a5568;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+/* Футер с кнопкой актов */
+.footerActions {
+  padding: 20px;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 8px;
+}
+
+.actsButton {
+  --border-radius: 10px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  height: 48px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  --background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  --background-hover: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%);
+  --background-activated: linear-gradient(135deg, #2c5aa0 0%, #2a4365 100%);
+  margin: 0;
+}
+
+.actsButton ion-icon {
+  font-size: 18px;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+  .invoiceHeader {
+    padding: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .invoiceTitle h2 {
+    font-size: 1.3rem;
+  }
+  
+  .invoiceItem {
+    --padding-start: 16px;
+    --padding-end: 16px;
+  }
+  
+  .invoiceItem ion-icon[slot="start"] {
+    margin-right: 10px;
+    font-size: 16px;
+    padding: 5px;
+  }
+  
+  .footerActions {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  .invoiceHeader {
+    padding: 14px;
+  }
+  
+  .invoiceTitle h2 {
+    font-size: 1.2rem;
+  }
+  
+  .invoiceItem {
+    --padding-start: 14px;
+    --padding-end: 14px;
+    --padding-top: 14px;
+    --padding-bottom: 14px;
+  }
+  
+  .itemContent {
+    font-size: 0.9rem;
+  }
+}
+
+/* Анимации */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.invoiceContainer {
+  animation: slideInUp 0.3s ease-out;
+}
+
+/* Цветовые варианты для статусов */
+.statusSuccess {
+  background: #48bb78;
+  color: white;
+}
+
+.statusWarning {
+  background: #ed8936;
+  color: white;
+}
+
+.statusDanger {
+  background: #f56565;
+  color: white;
+}
+
+.statusPrimary {
+  background: #4299e1;
+  color: white;
+}
+
+.statusMedium {
+  background: #a0aec0;
+  color: white;
+}

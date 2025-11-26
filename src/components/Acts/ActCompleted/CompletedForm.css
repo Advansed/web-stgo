@@ -1,0 +1,397 @@
+/* CompletedForm.css - Компактная и современная версия */
+
+.completed-form {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding: 16px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ============================================
+   ЗАГОЛОВОК ФОРМЫ
+   ============================================ */
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid #2563eb;
+}
+
+.form-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* ============================================
+   СОДЕРЖАНИЕ ФОРМЫ
+   ============================================ */
+.completed-form-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* ============================================
+   СЕКЦИИ ФОРМЫ
+   ============================================ */
+.form-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+}
+
+.form-section:last-child {
+  border-bottom: none;
+}
+
+.form-section:hover {
+  background: #fafbfc;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-section-title::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: #2563eb;
+  border-radius: 2px;
+}
+
+/* ============================================
+   РЯДЫ ФОРМЫ
+   ============================================ */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-row:last-child {
+  margin-bottom: 0;
+}
+
+/* Полная ширина для текстовых областей */
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+/* ============================================
+   ПОЛЯ ВВОДА
+   ============================================ */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 2px;
+}
+
+.form-field input,
+.form-field textarea {
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-field input:hover,
+.form-field textarea:hover {
+  border-color: #d1d5db;
+}
+
+/* Текстовые области */
+.form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.4;
+}
+
+/* Только для чтения */
+.readonly-field {
+  background: #f9fafb;
+  border: 1.5px solid #f3f4f6;
+  color: #6b7280;
+}
+
+.readonly-field:focus {
+  border-color: #f3f4f6;
+  box-shadow: none;
+}
+
+/* ============================================
+   КНОПКИ
+   ============================================ */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: #4b5563;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #374151;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #6b7280;
+  border: 1.5px solid #d1d5db;
+}
+
+.btn-outline:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+/* ============================================
+   АВТОЗАПОЛНЕНИЕ КАЧЕСТВА
+   ============================================ */
+.quality-auto-fill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.auto-fill-hint {
+  font-size: 12px;
+  color: #0369a1;
+}
+
+/* ============================================
+   ФУТЕР ФОРМЫ
+   ============================================ */
+.form-footer {
+  padding: 20px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ============================================
+   СООБЩЕНИЯ ОБ ОШИБКАХ
+   ============================================ */
+.error-message {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============================================
+   ЗАГРУЗКА
+   ============================================ */
+.form-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6b7280;
+  gap: 12px;
+}
+
+/* ============================================
+   АДАПТИВНОСТЬ
+   ============================================ */
+@media screen and (max-width: 768px) {
+  .completed-form {
+    padding: 12px;
+  }
+  
+  .form-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    text-align: center;
+  }
+  
+  .form-actions {
+    justify-content: center;
+  }
+  
+  .form-section {
+    padding: 16px 20px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  .quality-auto-fill {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .completed-form {
+    padding: 8px;
+  }
+  
+  .form-header h2 {
+    font-size: 18px;
+  }
+  
+  .form-section {
+    padding: 14px 16px;
+  }
+  
+  .form-field input,
+  .form-field textarea {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+/* ============================================
+   АНИМАЦИИ
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.completed-form-content {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.form-section {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* ============================================
+   ТЕМНАЯ ТЕМА (ОПЦИОНАЛЬНО)
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  .completed-form {
+    background: #111827;
+    color: #f9fafb;
+  }
+  
+  .form-header,
+  .completed-form-content,
+  .form-footer {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .form-section {
+    border-bottom-color: #374151;
+  }
+  
+  .form-section:hover {
+    background: #374151;
+  }
+  
+  .form-field input,
+  .form-field textarea {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .form-field input:focus,
+  .form-field textarea:focus {
+    border-color: #3b82f6;
+  }
+  
+  .readonly-field {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #d1d5db;
+  }
+}
