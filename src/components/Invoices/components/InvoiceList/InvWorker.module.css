@@ -1,0 +1,263 @@
+/* src/components/Invoices/components/InvWorker/InvWorker.module.css */
+
+/* ============================================ */
+/* WORKER CARD */
+/* ============================================ */
+
+.workerCard {
+    background: #92c2f1; /* Светлый фон для карточки */
+    border: 1px solid var(--ion-color-light, #e0e0e0);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.workerCard:hover {
+    border-color: var(--ion-color-primary, #3880ff);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.workerCardSelected {
+    border-color: var(--ion-color-primary, #3880ff);
+    background-color: rgba(56, 128, 255, 0.05);
+    box-shadow: 0 4px 12px rgba(56, 128, 255, 0.15);
+}
+
+/* ============================================ */
+/* WORKER HEADER */
+/* ============================================ */
+
+.workerHeader {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.workerAvatar {
+    /* margin-right: 12px; */
+    flex-shrink: 0;
+}
+
+.avatarPlaceholder {
+    font-size: 2em;
+    color: var(--ion-color-medium, #92949c);
+}
+
+.workerBasicInfo {
+    flex: 1;
+}
+
+.workerName {
+    /* font-weight: 600; */
+    font-size: 0.9em; /* Увеличил до 1.2em */
+    color: var(--ion-color-dark, #222428);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.workerMeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ============================================ */
+/* STATUS BADGES */
+/* ============================================ */
+
+.statusBadge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem; /* Немного увеличил для лучшей читаемости */
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.statusAvailable {
+    background-color: rgba(45, 211, 111, 0.1);
+    color: var(--ion-color-success, #2dd36f);
+}
+
+.statusBusy {
+    background-color: rgba(255, 196, 9, 0.1);
+    color: var(--ion-color-warning, #ffc409);
+}
+
+.statusOffline {
+    background-color: rgba(116, 116, 128, 0.1);
+    color: var(--ion-color-medium, #92949c);
+}
+
+.statusBreak {
+    background-color: rgba(255, 145, 0, 0.1);
+    color: #ff9100;
+}
+
+.statusDefault {
+    background-color: rgba(56, 128, 255, 0.1);
+    color: var(--ion-color-primary, #3880ff);
+}
+
+/* ============================================ */
+/* RATING */
+/* ============================================ */
+
+.rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--ion-color-warning, #ffc409);
+}
+
+.rating ion-icon {
+    font-size: 14px;
+}
+
+.ratingValue {
+    font-size: 0.9rem; /* Увеличил для соответствия новому размеру */
+    font-weight: 500;
+}
+
+/* ============================================ */
+/* WORKER INFO - ОДНА СТРОКА */
+/* ============================================ */
+
+.workerInfo {
+    display: flex; /* Изменено на flex для одной строки */
+    align-items: center;
+    flex-wrap: wrap; /* Разрешаем перенос при необходимости */
+    gap: 16px; /* Отступы между элементами */
+    margin-bottom: 16px;
+    font-size: 1.2rem; /* Увеличил общий размер шрифта до 1.2em */
+}
+
+.infoRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0; /* Убрал отступы снизу */
+    white-space: nowrap; /* Запрещаем перенос текста */
+}
+
+.infoIcon {
+    font-size: 18px; /* Увеличил иконки */
+    color: var(--ion-color-medium, #92949c);
+    min-width: 20px;
+}
+
+.infoText {
+    font-size: 1.2rem; /* Увеличил до 1.2em */
+    color: var(--ion-color-dark, #222428);
+}
+
+/* ============================================ */
+/* SKILLS - ОДНА СТРОКА */
+/* ============================================ */
+
+.skillsContainer {
+    display: flex; /* Изменено на flex для одной строки */
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap; /* Запрещаем перенос */
+}
+
+.skillsLabel {
+    font-size: 1.2rem; /* Увеличил до 1.2em */
+    color: var(--ion-color-medium, #92949c);
+    margin: 0; /* Убрал отступы */
+}
+
+.skillsList {
+    display: flex;
+    flex-wrap: nowrap; /* Запрещаем перенос */
+    gap: 6px;
+}
+
+.skillBadge {
+    font-size: 0.85rem; /* Немного увеличил для лучшей читаемости */
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--ion-color-light, #f4f5f8);
+    color: var(--ion-color-medium, #92949c);
+}
+
+/* ============================================ */
+/* WORKER ACTIONS */
+/* ============================================ */
+
+.workerActions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--ion-color-light, #e0e0e0);
+}
+
+.actionButton {
+    --padding-start: 8px;
+    --padding-end: 8px;
+    --border-radius: 8px;
+    color: var(--ion-color-medium, #92949c);
+}
+
+.assignButton {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --border-radius: 8px;
+    font-size: 1rem; /* Увеличил для соответствия новому размеру */
+    margin-left: auto;
+}
+
+.unassignButton {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --border-radius: 8px;
+    font-size: 1rem; /* Увеличил для соответствия новому размеру */
+    margin-left: auto;
+}
+
+/* ============================================ */
+/* RESPONSIVE */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    .workerCard {
+        padding: 12px;
+    }
+    
+    .workerName {
+        font-size: 1.1rem; /* Немного уменьшил на мобильных */
+    }
+    
+    .workerInfo {
+        font-size: 1rem; /* Немного уменьшил на мобильных */
+        gap: 12px;
+        flex-wrap: wrap; /* Разрешаем перенос на мобильных */
+    }
+    
+    .infoText {
+        font-size: 1rem;
+    }
+    
+    .skillsContainer {
+        flex-wrap: wrap; /* Разрешаем перенос на мобильных */
+        white-space: normal;
+    }
+    
+    .workerActions {
+        flex-wrap: wrap;
+    }
+    
+    .assignButton,
+    .unassignButton {
+        flex: 1;
+        min-width: 100px;
+    }
+}

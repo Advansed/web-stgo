@@ -1,13 +1,13 @@
 import React, { useCallback } from 'react'; 
 import { 
     IonButton, 
-    IonRefresher, 
-    IonRefresherContent, 
     IonText 
 } from '@ionic/react'; 
 import styles from './InvoiceList.module.css'; 
 import InvoiceItem from './InvoiceItem'; 
+import InvWorker from './InvWorker';
 import Maps from '../../../Maps/Maps';
+import { useWorkers } from '../../../../Store/navigationStore';
 
 export const InvMap: React.FC<any> = ({ 
     invoices, 
@@ -17,19 +17,8 @@ export const InvMap: React.FC<any> = ({
     onInvoiceSelect, 
     getInvoiceStatus, 
     formatDate, 
-    formatPhone, 
-    selectedInvoice, // Выбранная заявка для отображения на карте 
-    mapRouteData // Данные для построения маршрута на карте 
+    formatPhone
 }) => { 
-
-    const handleRefresh = useCallback(async (event: CustomEvent) => { 
-        await onRefresh(); 
-        event.detail.complete(); 
-    }, [onRefresh]); 
-
-    const handleInvoiceSelect = useCallback((invoiceId: string) => { 
-        onInvoiceSelect(invoiceId); 
-    }, [onInvoiceSelect]); 
 
     const handleCall = useCallback((phone: string, event: React.MouseEvent) => { 
         event.stopPropagation(); 
@@ -37,6 +26,8 @@ export const InvMap: React.FC<any> = ({
             window.open(`tel:${phone}`); 
         } 
     }, []); 
+
+    const { workers } = useWorkers();
 
     const render = (invoices: any) => { 
         let elem = <></> 
@@ -50,29 +41,68 @@ export const InvMap: React.FC<any> = ({
                         key         = { invoice?.Ссылка } 
                         invoice     = { invoice } 
                         status      = { getInvoiceStatus(invoice) } 
-                        onSelect    = { handleInvoiceSelect } 
+                        onSelect    = { onInvoiceSelect } 
                         onCall      = { handleCall } 
                         formatDate  = { formatDate } 
                         formatPhone = { formatPhone } 
-                        // isSelected  = { selectedInvoice?.id === invoice?.Ссылка } // Подсветка выбранной заявки 
                     /> 
                 </> 
         } 
         return elem 
     } 
 
+    const handleTrackWorker = (workerId: string) => {
+        // Логика отслеживания работника на карте
+        console.log('Tracking worker:', workerId);
+    };
+
+    const handleWorkerSelect = (workerId: string) => {
+        // Логика выбора работника
+        console.log('Selected worker:', workerId);
+    };
+
+    const formatDistance = (distance: number) => {
+        if (distance < 1) {
+            return `${Math.round(distance * 1000)} м`;
+        }
+        return `${distance.toFixed(1)} км`;
+    };
+
+    const renderWorkers = () => {
+
+        if (!workers || workers.length === 0) {
+            return (
+                <div className={styles.emptyState}>
+                    <IonText color="medium">Нет доступных работников</IonText>
+                </div>
+            );
+        }
+
+        return (
+            <div className={styles.workersList}>
+                {workers.map((worker: any) => (
+                    <InvWorker
+                        key                 = { worker.id }
+                        worker              = { worker }
+                        onSelect            = { handleWorkerSelect }
+                        onCall              = { handleCall }
+                        onTrack             = { handleTrackWorker }
+                        // onAssign            = { assignWorker }
+                        // onUnassign          = { unassignWorker }
+                        formatDistance      = { formatDistance }
+                    />
+                ))}
+            </div>
+        );
+    };
+
     return ( 
         <div className={styles.invoicePageWithMap}> 
-            {/* Левая часть - список заявок */} 
-            <div className={styles.invoicesPanel}> {/* ДОБАВЛЕН КЛАСС */}
+            <div className={styles.invoicesPanel}>
                 <div className={styles.invoicePageHeader}> 
                     <h2 className={styles.invoicePageTitle}>Заявки</h2> 
                     <p className={styles.invoicePageSubtitle}>Всего: {invoices.length}</p> 
                 </div> 
-
-                <IonRefresher slot="fixed" onIonRefresh={handleRefresh}> 
-                    <IonRefresherContent /> 
-                </IonRefresher> 
 
                 <div className={styles.invoicePageContent}> 
                     {loading && !refreshing ? ( 
@@ -94,14 +124,22 @@ export const InvMap: React.FC<any> = ({
                 </div> 
             </div> 
 
-            {/* Правая часть - Яндекс карта */} 
-            <div className={styles.mapPanel}> {/* ДОБАВЛЕН КЛАСС */}
-                    <Maps
-                        invoices = { invoices }
-                    /> 
+            <div className={styles.mapPanel}>
+                <Maps invoices={invoices} />
             </div> 
+
+            <div className={styles.workersPanel}>
+                <div className={styles.workersHeader}>
+                    <h2 className={styles.workersTitle}>Работники</h2>
+                    <p className={styles.workersSubtitle}>Всего: {workers?.length || 0}</p>
+                </div>
+
+                <div className={styles.workersContent}>
+                    {renderWorkers()}
+                </div>
+            </div>
         </div> 
     ); 
 }; 
 
-export default React.memo( InvMap );
+export default React.memo(InvMap);

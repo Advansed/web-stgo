@@ -33,6 +33,81 @@
     position: relative;
 }
 
+.workersPanel {
+    width: 300px; /* Фиксированная ширина для панели работников */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-left: 1px solid var(--ion-color-light);
+    background: var(--ion-background-color);
+}
+
+.workersHeader {
+    padding: 16px 20px 8px 20px;
+    background: var(--ion-background-color);
+    border-bottom: 1px solid var(--ion-color-light);
+    flex-shrink: 0;
+}
+
+.workersTitle {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+}
+
+.workersSubtitle {
+    margin: 4px 0 0 0;
+    font-size: 0.85rem;
+    color: var(--ion-color-medium);
+}
+
+.workersContent {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* ============================================ */
+/* WORKERS LIST */
+/* ============================================ */
+
+.workersList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.workerItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border: 1px solid var(--ion-color-light);
+    border-radius: 8px;
+    background: white;
+}
+
+.workerInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.workerStatus {
+    font-size: 0.8rem;
+}
+
+.workerActions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ============================================ */
+/* INVOICE PAGE HEADER */
+/* ============================================ */
+
 .invoicePageHeader {
     padding: 16px 20px 8px 20px;
     background: var(--ion-background-color);

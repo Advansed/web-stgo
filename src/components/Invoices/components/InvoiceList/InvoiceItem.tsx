@@ -2,37 +2,44 @@
 import React from 'react';
 import {
   IonCard,
-  IonChip,
   IonIcon,
-  IonButton
 } from '@ionic/react';
 import {
-  callOutline,
   locationOutline,
   calendarOutline,
-  personOutline,
-  documentTextOutline
 } from 'ionicons/icons';
 import styles from './InvoiceItem.module.css';
 
-interface Invoice {
-  Ссылка: string;
-  Номер: string;
-  Дата: string;
-  ЛицевойСчет: string;
-  ТекстЗаявки: string | null;
-  Телефон: string | null;
-  ВремяУдобноеДляЗаказчика: string;
-  ВремяФактическогоВыполнения: string;
-  ФлагВыполнения: number;
-  КомментарийПоВыполнению: string | null;
-  Просрочена: number;
-  ХарактерЗаявки: string | null;
-  Заявитель: string | null;
-  Адрес: string;
-  Дом: string;
-  Квартира: string | null;
-  Участок: string;
+export interface Worker {
+  id:             string;
+  name:           string;
+  role:           string;
+}
+
+export interface Address {
+  address:        string;
+  lat:            number;
+  lon:            number;
+}
+
+export interface Invoice {
+  id:             string;
+  number:         string;
+  date:           string;
+  lic:            string;
+  service:        string | null;
+  phone:          string | null;
+  plan_date:      string;
+  complete_date:  string;
+  flag:           number;
+  complete_text:  string | null;
+  overdue:        number;
+  character:      string | null;
+  applicant:      string | null;
+  address:        Address;
+  status:         string;
+  plot:           string;
+  worker:         Worker;
 }
 
 interface InvoiceStatus {
@@ -62,24 +69,36 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
 
   const handleCallClick = (event: React.MouseEvent) => {
     event.stopPropagation();
-    onCall(invoice.Телефон, event);
+    onCall(invoice.phone, event);
   };
 
   const getStatusText = () => {
-    if (invoice.ФлагВыполнения === 1) return 'Выполнена';
-    if (invoice.Просрочена === 1) return 'Просрочена';
-    return 'В работе';
+    return invoice.status;
   };
 
   const getFullAddress = () => {
-
-    let address = (typeof invoice.Адрес) === 'string' ? invoice.Адрес : (invoice.Адрес as any).address;
+    let address = invoice.address.address;
     return address;
   };
 
+  const getStatusClass = () => {
+    if( invoice.status === 'Принята')
+      return styles.status + ' ' + styles.statusNew 
+    if( invoice.status === 'Передана')
+      return styles.status + ' ' + styles.statusInProgress 
+    if( invoice.status === 'Выполнена')
+      return styles.status + ' ' + styles.statusCompleted 
+    if( invoice.status === 'Отложена')
+      return styles.status + ' ' + styles.statusOnHold
+    if( invoice.status === 'Отклонена')
+      return styles.status + ' ' + styles.statusRejected
+    
+    return 'status'
+  }
+
   return (
     <IonCard 
-      className={styles.invoiceCard}
+      className={ invoice.address.lat ? styles.invoiceCard1 : styles.invoiceCard2 }
       data-status={status.color}
       onClick={handleCardClick}
       button
@@ -88,19 +107,20 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
         {/* Заголовок */}
         <div className={styles.cardHeader}>
           <div className={styles.headerLeft}>
-            <h3 className={styles.invoiceNumber}>
-              #{invoice.Номер.trim()}
-            </h3>
+            <div className={styles.invoiceNumber}>
+              #{invoice.number.trim()}
+            </div>
             <p className={styles.invoiceDate}>
-              {formatDate(invoice.Дата)}
+              {formatDate(invoice.date)}
             </p>
           </div>
-          <IonChip 
-            color={status.color} 
-            className={styles.statusBadge}
-          >
-            {getStatusText()}
-          </IonChip>
+          <div >
+            <div
+              className = { getStatusClass() }
+            >
+              <b>{getStatusText()}</b>
+            </div>
+          </div>
         </div>
 
         {/* Основной контент */}
@@ -109,22 +129,19 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
           <div className={styles.infoSection}>
             <div className={styles.infoLabel}>
               <IonIcon icon={locationOutline} className={styles.labelIcon} />
-              Адрес
+              Адрес {getFullAddress()}
             </div>
-            <p className={`${styles.infoValue} ${styles.addressValue}`}>
-              {getFullAddress()}
-            </p>
           </div>
 
           {/* Даты */}
-          <div className={styles.datesRow}>
+          {/* <div className={styles.datesRow}>
             <div className={styles.infoSection}>
               <div className={styles.infoLabel}>
                 <IonIcon icon={calendarOutline} className={styles.labelIcon} />
                 Удобное время
               </div>
               <p className={styles.infoValue}>
-                {formatDate(invoice.ВремяУдобноеДляЗаказчика)}
+                {formatDate(invoice.plan_date)}
               </p>
             </div>
 
@@ -134,13 +151,13 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
                 Факт. выполнение
               </div>
               <p className={styles.infoValue}>
-                {formatDate(invoice.ВремяФактическогоВыполнения)}
+                {formatDate(invoice.complete_date)}
               </p>
             </div>
-          </div>
+          </div> */}
 
           {/* Дополнительная информация */}
-          {(invoice.Заявитель || invoice.ХарактерЗаявки) && (
+          {/* {(invoice.Заявитель || invoice.ХарактерЗаявки) && (
             <div className={styles.additionalInfo}>
               {invoice.Заявитель && (
                 <div className={styles.infoSection}>
@@ -166,11 +183,11 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
                 </div>
               )}
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Футер */}
-        <div className={styles.cardFooter}>
+        {/* <div className={styles.cardFooter}>
           <div className={styles.accountInfo}>
             <span className={styles.accountItem}>
               ЛС: {invoice.ЛицевойСчет}
@@ -206,7 +223,7 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({
               Подробнее
             </IonButton>
           </div>
-        </div>
+        </div> */}
       </div>
     </IonCard>
   );

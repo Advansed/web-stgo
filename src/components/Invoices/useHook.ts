@@ -7,44 +7,60 @@ import { post } from '../../Store/api';
 
 
 export const useHook = () => {
-  const { data: invoices, setData }   = useInvoices();
+  const { data: invoices, setData, update, setUpdate }   = useInvoices();
   const { token }                     = useToken();
   const toast                         = useToast();
-  const { loading, setLoading}        = useLoading()
+  const { loading, setLoading}        = useLoading()    
+  
 
+  const refreshData                   = useCallback(async ( upd: number ) => {
+    
+    console.log( 'update', upd, update )
 
-  const get_inv                       = useCallback(async () => {
-    
-    setLoading(true);
-    
-    try {
-      const res = await post("get_invoices", { token } );
-      console.log("get_invoices", res)
-      if (res.success) {
-        setData( res.data )
-        toast.success("Данные счетов получены");
-      } else {
-        toast.error(res.message);
+    if( update < upd ) {
+
+      setLoading(true);
+      try {
+        const res = await post("invoices", { token } );
+        console.log("invoices", res)
+        if (res.success) {
+          setData( res.data )
+          setUpdate( upd )
+          toast.success("Данные счетов получены");
+        } else {
+          toast.error(res.message);
+        }
+      } catch (err) {
+        toast.error('Ошибка сети или сервера при получении счетов');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      toast.error('Ошибка сети или сервера при получении счетов');
-    } finally {
-      setLoading(false);
+      
     }
 
-  }, [ token ]);
 
-
-  const refreshData                   = useCallback(() => {
-    get_inv();
-  }, [get_inv]);
-
+  }, []);
 
   const get_inv_status                = useCallback((invoice: any): any => {
-      return {
-          text:   'Обычная',
-          color:  'success'
-      };
+
+    if( invoice.Статус === "Новый")
+        return {
+            text:   'Новый',
+            color:  'tertiary'
+        };
+      
+    if( invoice.Статус === "В работе")
+        return {
+            text:   'В работе',
+            color:  'primary'
+        };
+      
+    return {
+        text:   'Обычная',
+        color:  'success'
+    };
+
+
   }, []);
 
     // Завершенная функция formatDate
@@ -113,9 +129,9 @@ export const useHook = () => {
 
 
   const uppdate_address               = useCallback(async( id, address) => {
-      console.log("upd_inv_address", id, address )
-      const res = await post("upd_inv_address", { token, id: id, address})
-      console.log("upd_inv_address", res )
+      console.log("set_inv_address", id, address )
+      const res = await post("set_inv_address", { token, id: id, address: address.address, lat: address.lat, lon: address.lon })
+      console.log("set_inv_address", res )
       if(res.success){
         const jarr = invoices.map( (inv) =>
               inv.Ссылка === id 
@@ -123,18 +139,36 @@ export const useHook = () => {
                 : inv
         )
         setData( jarr );
+
       } else toast.error("Ошибка обновления адреса")
       return res
-  }, [])
+  }, [ token, invoices, setData, toast ])
+
+
+  const upd_worker                    = useCallback(async( id, worker ) => {
+      console.log( "set_inv_worker", id, worker.worker, worker.status )
+      const res = await post( "set_inv_worker", { token, id, worker: worker.worker.id, status: worker.status })
+      console.log( "set_inv_worker", res )
+      if(res.success){
+        const jarr = invoices.map( ( inv ) =>
+              inv.Ссылка === id 
+                ? { ...inv, Работник: worker, Статус: worker.status }
+                : inv
+        )
+        setData( jarr );
+      } else toast.error("Ошибка обновления адреса")
+      return res
+  }, [ token, invoices, setData, toast ])
 
   return {
+    update,
     loading,
     invoices,
     refreshData,
-    get_inv,
     get_inv_status,
     format_date,
     uppdate_address,
+    upd_worker,
     format_phone
   };
 };

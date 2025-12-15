@@ -1,50 +1,41 @@
 // src/components/Lics/AddressForm.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     IonCard,
     IonCardContent,
     IonCardHeader,
     IonCardTitle,
-    IonItem,
-    IonInput,
     IonButton,
     IonIcon,
     IonSpinner,
     IonText
 } from '@ionic/react';
-import { locationOutline, ellipsisHorizontal, saveOutline } from 'ionicons/icons';
+import { locationOutline, saveOutline } from 'ionicons/icons';
 import './FindAddress.css';
-import { ConfidenceLevel, StandardizedAddress, useDaData } from '../../../dadata-component';
 import { useToast } from '../../../Toast/useToast';
 import { AddressSuggestions } from 'react-dadata';
 import 'react-dadata/dist/react-dadata.css';
 
 interface LicsProps {
-    initialAddress?: string;
-    invoiceId?: string;
-    onAddressChange?: (address: string, isStandardized: boolean) => void;
-    onAddressSaved?: (address: string) => Promise<void>;
-    onAddressClosed?: () => void;
-    disabled?: boolean;
+    initialAddress?:        string;
+    onAddressChange?:       (address: string ) => void;
+    onClose?:                () => void;
 }
 
 export function AddressForm({ 
     initialAddress = '', 
-    invoiceId,
-    onAddressChange, 
-    onAddressSaved,
-    onAddressClosed,
-    disabled = false 
+    onAddressChange,
+    onClose
 }: LicsProps) {
-    const [address, setAddress] = useState<string>(initialAddress);
-    const [standardizedAddress, setStandardizedAddress] = useState<any>({ address: "", lat: 0, lng: 0});
+    const [ address ] = useState<string>(initialAddress);
+    const [standardizedAddress, setStandardizedAddress] = useState<any>({ address: "", lat: 0, lon: 0});
     const [saving, setSaving] = useState<boolean>(false);
 
     const toast = useToast();
 
 
     const handleSave = async () => {
-        if (!onAddressSaved) return;
+        if (!onAddressChange) return;
         
         const addressToSave = standardizedAddress;
         if (!addressToSave.address.trim()) {
@@ -54,7 +45,7 @@ export function AddressForm({
 
         setSaving(true);
         try {
-            await onAddressSaved( standardizedAddress );
+            await onAddressChange( standardizedAddress );
             toast.success('Адрес успешно сохранен');
         } catch (error) {
             console.error('Ошибка сохранения:', error);
@@ -85,7 +76,7 @@ export function AddressForm({
                             setStandardizedAddress({
                                 address: e?.value as string,
                                 lat:    e?.data.geo_lat,
-                                lng:    e?.data.geo_lon,
+                                lon:    e?.data.geo_lon,
                             })
                         }} 
                     />
@@ -97,7 +88,7 @@ export function AddressForm({
                     {/* Кнопки управления */}
                     <div className="address-buttons">
 
-                        {onAddressSaved && (
+                        {onAddressChange && (
                             <IonButton
                                 expand  = "block"
                                 fill    = "outline"
@@ -120,7 +111,7 @@ export function AddressForm({
                             <IonButton
                                 expand="block"
                                 fill="outline"
-                                onClick={ onAddressClosed }
+                                onClick={ onClose }
                             >
                                 {saving ? (
                                     <>

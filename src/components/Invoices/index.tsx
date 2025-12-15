@@ -1,11 +1,9 @@
 import React, { use, useEffect, useState } from 'react';
 import { useHook } from './useHook';
 import { InvoiceView } from './components/InvoiceView';
-import { InvoiceActs } from './components/InvoiceActs';
-import { InvoicePrintForm } from './components/InvoicePrintForm';
-import { useNavigation } from './useNavigation';
-import { useAdd, useItem } from '../../Store/navigationStore';
+import { useItem, useUpdate } from '../../Store/navigationStore';
 import InvMap from './components/InvoiceList/InvMap';
+import { InvExecute } from './components/InvExecute';
 
 
 declare global {
@@ -15,6 +13,7 @@ declare global {
 }
 
 const Invoices: React.FC = () => {
+    
     const {
         invoices,
         loading,
@@ -22,88 +21,56 @@ const Invoices: React.FC = () => {
         format_phone,
         format_date,
         uppdate_address,
+        upd_worker,
         get_inv_status
     } = useHook();
 
+    const { update, setUpdate } = useUpdate();
 
     const { item, setItem } = useItem()
 
     const [ view, setView ] = useState(false)
-
-    const { navigation, navigateToPosition, goBack } = useNavigation()
-
-    const { add } = useAdd();
-
+    const [ exec, setExec ] = useState(false)
+    
     useEffect(()=>{
-        console.log("refresshh")
-        console.log("refres", invoices)
-    },[add])
+        refreshData( update )
+    },[ update ])
 
     const handleSelect = ( invoice: any) => {
 
         setItem( invoice );
         setView( true )
-        // navigateToPosition( { position: 1, canCoBack: true } )
 
     }
 
-    const renderCurrentPage = () => {
-        
-        switch (navigation.position) {
-
-            case 0:
-                return (
-                    <InvMap
-                        invoices            = { invoices }
-                        loading             = { loading }
-                        refreshing          = { loading }
-                        onRefresh           = { refreshData }
-                        onInvoiceSelect     = { handleSelect }
-                        getInvoiceStatus    = { get_inv_status }
-                        formatDate          = { format_date }
-                        formatPhone         = { format_phone }
-                        selectedInvoice     = { setItem }
-                        mapRouteData        = { item ? {
-                            startCoords:    [ 55.751244, 37.618423 ], // Координаты склада
-                            endCoords:      [ 55.751310, 37.618445 ], // Координаты клиента
-                            licInfo:        item.cargoDetails
-                        } : null}
-                    />
-                );
-
-            case 1:
-                if (!item) {
-                    return <div>Загрузка...</div>; // ✅ Заменить на это
-                }
-
-            case 2:
-                if (!item) {
-                    navigateToPosition({ position: 0, canCoBack: false });
-                    return null;
-                }
-                return <InvoiceActs invoice={ item } />;
-
-            case 3:
-                if (!item) {
-                    navigateToPosition(0);
-                    return null;
-                }
-                return (
-                    <InvoicePrintForm
-                        invoice                 = { item }
-                        formatDate              = { format_date }
-                        formatPhone             = { format_phone }
-                    />
-                );
-
-            default:
-                return null;
-        }
-    };
+    const handleUpdateAddress = async(id, address ) => {
+        await uppdate_address(id, address )
+        setUpdate( update + 1 );
+    }
+    const handleUpdateWorker = async(id, worker ) => {
+        await upd_worker(id, worker )
+        setUpdate( update + 1 );
+    }
 
     return (
         <div className="invoices-page">
-            {renderCurrentPage()}
+            
+            <InvMap
+                invoices            = { invoices }
+                loading             = { loading }
+                refreshing          = { loading }
+                onRefresh           = { refreshData }
+                onInvoiceSelect     = { handleSelect }
+                getInvoiceStatus    = { get_inv_status }
+                formatDate          = { format_date }
+                formatPhone         = { format_phone }
+                selectedInvoice     = { setItem }
+                mapRouteData        = { item ? {
+                    startCoords:    [ 55.751244, 37.618423 ], // Координаты склада
+                    endCoords:      [ 55.751310, 37.618445 ], // Координаты клиента
+                    licInfo:        item.cargoDetails
+                } : null}
+            />
 
         { item !== undefined && (
           <InvoiceView
@@ -112,14 +79,21 @@ const Invoices: React.FC = () => {
                 invoiceStatus           = { get_inv_status( item ) }
                 formatDate              = { format_date }
                 formatPhone             = { format_phone }
-                onNavigateToActs        = { () => navigateToPosition({ position: 2, canCoBack: true }) }
-                onNavigateToPrint       = { () => navigateToPosition({ position: 3, canCoBack: true }) }
-                onUpdateAddress         = { (id, address) => uppdate_address(id, address) }
+                onNavigateToActs        = { () => { setExec( true ) } }
+                onNavigateToPrint       = { () => { } }
+                onUpdateAddress         = { handleUpdateAddress }
                 onClose                 = { () => { setView(false) }}
             />
         )}            
 
-
+        { item !== undefined && (
+            <InvExecute
+                invoice                 = { item }
+                isOpen                  = { exec }
+                onClose                 = { () => setExec( false ) }
+                onAssignToExecutor      = { async (worker) => handleUpdateWorker(item.id, worker) }
+            />
+        )}            
         </div>
     );
 };

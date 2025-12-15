@@ -16,7 +16,7 @@ import {
 import { useParams } from 'react-router';
 import './Page.css';
 import { Lics } from '../components/Lics';
-import { useAdd, useRoutes } from '../Store/navigationStore';
+import { useAdd, useRoutes, useUpdate } from '../Store/navigationStore';
 import { addOutline, arrowBackOutline, businessOutline, personOutline, refreshOutline } from 'ionicons/icons';
 import Invoices from '../components/Invoices';
 import { useUser } from '../Store/loginStore';
@@ -30,6 +30,8 @@ const Page: React.FC = () => {
   const { currentRoute, goBack } = useRoutes()
 
   const { add, setAdd } = useAdd()
+  
+  const { update, setUpdate } = useUpdate()
 
   const PageContent = () => {
 
@@ -61,7 +63,7 @@ const Page: React.FC = () => {
           </>
       case 'invoices':   return <>
               <IonIcon icon={ refreshOutline } className="action-icon back-icon"
-                  onClick={() => { setAdd( !add ); }}
+                  onClick={() => { setUpdate( update + 1 ); }}
               />
           </>
       default: return <></>

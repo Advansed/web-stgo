@@ -18,7 +18,7 @@ export const useApp = () => {
   const { setWorkers }            = useWorkers()
 
   useEffect(()=>{
-    if( auth ){
+    if( auth && token ){
 
         get_lics( token )
 
@@ -26,7 +26,7 @@ export const useApp = () => {
 
         get_workers( token )
     }  
-  },[auth])
+  },[auth, token])
 
   const get_lics                    = async (token ) => {
 
@@ -38,8 +38,9 @@ export const useApp = () => {
 
   const get_invoices                = async (token ) => {
 
-    const res = await post("get_invoices", { token })
-    console.log("get_invoices App...", res.data )
+    const res = await post("invoices", { token })
+    console.log("invoices token", token )
+    console.log("invoices App...", res )
     if( res.success ) setInvoices( res.data )
       
 
@@ -47,8 +48,8 @@ export const useApp = () => {
 
   const get_workers                = async (token ) => {
 
-    const res = await post("get_workers", { token })
-    console.log("get_workers App...", res.data )
+    const res = await post("workers", { token })
+    console.log("workers App...", res.data )
     if( res.success ) setWorkers( res.data )
 
   }

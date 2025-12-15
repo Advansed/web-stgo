@@ -4,8 +4,10 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 interface InvoicesStore {
-  data:     any;
-  setData: (invoices: any) => void;
+  update:     number
+  data:       any;
+  setData:    (invoices: any) => void;
+  setUpdate:  ( upd: number) => void;
 }
 // ============================================
 // ZUSTAND STORE
@@ -15,9 +17,13 @@ export const useInvoicesStore = create<InvoicesStore>()(
   devtools(
     (set) => ({
 
+      update:           1,  
+
       data:             [],
 
       setData:          ( invoices)  => set({ data: invoices }),
+
+      setUpdate:        ( upd ) => set({ update: upd })
     
     }),
     { name: 'invoices-store' }
@@ -29,10 +35,11 @@ export const useInvoicesStore = create<InvoicesStore>()(
 // ============================================
 
 export const useInvoices                = () => {
-  const data      = useInvoicesStore( (state) => state.data )
-  const setData   = useInvoicesStore( (state) => state.setData )
-
-  return { data, setData }
+  const update      = useInvoicesStore( (state) => state.update)
+  const data        = useInvoicesStore( (state) => state.data )
+  const setData     = useInvoicesStore( (state) => state.setData )
+  const setUpdate   = useInvoicesStore( (state) => state.setUpdate )
+  return { data, setData, update, setUpdate }
 };
 
 
