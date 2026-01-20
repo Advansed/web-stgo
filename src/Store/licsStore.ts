@@ -1,9 +1,7 @@
-// src/Store/licsStore.ts
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { post } from './api';
-
+// ВАЖНО: Импортируем getData (V2 API)
+import { post, getData } from './api'; 
 
 interface LicsState {
   data:         any;
@@ -20,46 +18,38 @@ interface LicsActions {
 
 type LicsStore = LicsState & LicsActions;
 
-// ============================================
-// ZUSTAND STORE
-// ============================================
-
 export const useLicsStore = create<LicsStore>()(
-  
   devtools(
     (set) => ({
       data:         [],
       loading:      false,
+      item:         null,
 
       setData:      (data) => set({ data }),
+      setItem:      (item) => set({ item }),
       setLoading:   (loading) => set({ loading }),
 
       loadLics:     async (token) => {
-        set({ loading: true })
-
+        // Убрал setLoading(true), чтобы лишний раз не дергать перерисовку родителя
         try {
-            const res = await post('get_lics', { token })
-            console.log("lics", res.data)
+            // ФИКС: getData вместо post (так как метод get_lics в V2)
+            const res = await getData('get_lics', { token })
+            
             if (res.success) {
               set({ data: res.data })
               return res
             } else {
+              set({ data: [] }) 
               return res  
             } 
         } catch (err:any) {
-          return {success: false, message: "Ошибка получение данных"}
-        } finally {
-          set({ loading: false })
+          return {success: false, message: "Ошибка сети"}
         }
-
       }
-
     }),
     { name: 'lics-store' }
   )
-  
 );
-
 
 export const useData      = () => {
     const data    = useLicsStore( (state) => state.data );
@@ -67,17 +57,14 @@ export const useData      = () => {
     return { data, setData };
 };
 
-
 export const useLoading   = () => {
   const loading    = useLicsStore( (state) => state.loading );
   const setLoading = useLicsStore( (state) => state.setLoading );
   return { loading, setLoading };
 };
 
-
- export const useGetLics    = () => {
-    const loadLics = useLicsStore( (state) => state.data )    
-    
+// ВОЗВРАЩАЕМ ФУНКЦИЮ (LoadLics), А НЕ ДАННЫЕ
+export const useGetLics    = () => {
+    const loadLics = useLicsStore( (state) => state.loadLics )    
     return loadLics
-
- };
+};

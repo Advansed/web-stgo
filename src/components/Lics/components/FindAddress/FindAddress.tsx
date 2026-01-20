@@ -1,51 +1,56 @@
-// src/components/Lics/AddressForm.tsx
 import React, { useState } from 'react';
 import {
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardTitle,
-    IonButton,
     IonIcon,
-    IonSpinner,
-    IonText
+    IonSpinner
 } from '@ionic/react';
-import { locationOutline, saveOutline } from 'ionicons/icons';
+import { 
+    locationOutline, 
+    saveOutline, 
+    closeOutline, 
+    informationCircleOutline 
+} from 'ionicons/icons';
 import './FindAddress.css';
 import { useToast } from '../../../Toast/useToast';
 import { AddressSuggestions } from 'react-dadata';
 import 'react-dadata/dist/react-dadata.css';
 
-interface LicsProps {
-    initialAddress?:        string;
-    onAddressChange?:       (address: string ) => void;
-    onClose?:                () => void;
+interface AddressFormProps {
+    initialAddress?: string;
+    onAddressChange?: (address: string) => void;
+    onClose?: () => void;
 }
 
 export function AddressForm({ 
     initialAddress = '', 
     onAddressChange,
     onClose
-}: LicsProps) {
-    const [ address ] = useState<string>(initialAddress);
-    const [standardizedAddress, setStandardizedAddress] = useState<any>({ address: "", lat: 0, lon: 0});
+}: AddressFormProps) {
+    // В react-dadata value требует объекта, если мы хотим предзаполнить
+    const [addressQuery, setAddressQuery] = useState<string>(initialAddress);
+    
+    // Храним полный объект адреса
+    const [standardizedAddress, setStandardizedAddress] = useState<any>({ 
+        address: initialAddress, 
+        lat: 0, 
+        lon: 0 
+    });
+    
     const [saving, setSaving] = useState<boolean>(false);
-
     const toast = useToast();
-
 
     const handleSave = async () => {
         if (!onAddressChange) return;
         
-        const addressToSave = standardizedAddress;
-        if (!addressToSave.address.trim()) {
+        if (!standardizedAddress.address || !standardizedAddress.address.trim()) {
             toast.warning('Введите адрес для сохранения');
             return;
         }
 
         setSaving(true);
         try {
-            await onAddressChange( standardizedAddress );
+            // Передаем весь объект или строку (зависит от твоей логики в InvoiceView)
+            // Обычно передают строку. Если нужно объект - передавай standardizedAddress
+            await onAddressChange(standardizedAddress.address); 
             toast.success('Адрес успешно сохранен');
         } catch (error) {
             console.error('Ошибка сохранения:', error);
@@ -56,78 +61,83 @@ export function AddressForm({
     };
 
     return (
-        <div className="address-form">
-            <IonCard className="address-form-card">
-                <IonCardHeader className="address-form-header">
-                    <IonCardTitle className="address-form-title">
-                        <IonIcon icon={locationOutline} />
-                        Ввод и стандартизация адреса
-                    </IonCardTitle>
-                    <IonText className="description-text">
-                        Введите адрес. Стандартизация выполняется автоматически через 0.8 сек после окончания ввода.
-                    </IonText>
-                </IonCardHeader>
+        <div className="address-form-wrapper">
+            
+            {/* ШАПКА */}
+            <div className="address-header">
+                <div className="address-title">
+                    <IonIcon icon={locationOutline} />
+                    Поиск адреса
+                </div>
+                {onClose && (
+                    <button className="close-btn" onClick={onClose}>
+                        <IonIcon icon={closeOutline} />
+                    </button>
+                )}
+            </div>
 
-                <IonCardContent className="address-form-content">
-                    <AddressSuggestions token='50bfb3453a528d091723900fdae5ca5a30369832'
-                        value  = { {value: address} as any } 
-                        onChange={(e)=>{
-                            console.log(e?.value)
-                            setStandardizedAddress({
-                                address: e?.value as string,
-                                lat:    e?.data.geo_lat,
-                                lon:    e?.data.geo_lon,
-                            })
-                        }} 
+            {/* КОНТЕНТ */}
+            <div className="address-content">
+                
+                {/* Подсказка */}
+                <div className="info-block">
+                    <IonIcon icon={informationCircleOutline} className="info-icon" />
+                    <div className="info-text">
+                        Начните вводить адрес. Система автоматически исправит ошибки и предложит правильный вариант.
+                    </div>
+                </div>
+
+                {/* Поле ввода Dadata */}
+                <div className="dadata-container">
+                    <AddressSuggestions 
+                        token="50bfb3453a528d091723900fdae5ca5a30369832"
+                        defaultQuery={initialAddress}
+                        onChange={(e) => {
+                            if (e) {
+                                setStandardizedAddress({
+                                    address: e.value,
+                                    lat: parseFloat(e.data.geo_lat || '0'),
+                                    lon: parseFloat(e.data.geo_lon || '0'),
+                                });
+                            }
+                        }}
+                        inputProps={{
+                            placeholder: "Введите адрес (например, Ленина 1)",
+                            className: "react-dadata__input" // Наш класс для стилизации
+                        }}
                     />
+                </div>
 
-                    <div className='mt-1 cl-prim'>
-                        { standardizedAddress.address }
+                {/* Результат выбора */}
+                {standardizedAddress.address && standardizedAddress.address !== initialAddress && (
+                    <div className="result-card">
+                        <div className="result-label">Выбранный адрес</div>
+                        <div className="result-value">
+                            {standardizedAddress.address}
+                        </div>
                     </div>
+                )}
 
-                    {/* Кнопки управления */}
-                    <div className="address-buttons">
+            </div>
 
-                        {onAddressChange && (
-                            <IonButton
-                                expand  = "block"
-                                fill    = "outline"
-                                onClick = {handleSave}
-                                disabled={saving || !standardizedAddress.address.trim()}
-                            >
-                                {saving ? (
-                                    <>
-                                        <IonSpinner name="crescent" className="address-form-spinner" />
-                                        Сохранение...
-                                    </>
-                                ) : (
-                                    <>
-                                        <IonIcon icon={saveOutline} slot="start" />
-                                        Сохранить адрес
-                                    </>
-                                )}
-                            </IonButton>
-                        )}
-                            <IonButton
-                                expand="block"
-                                fill="outline"
-                                onClick={ onClose }
-                            >
-                                {saving ? (
-                                    <>
-                                        <IonSpinner name="crescent" className="address-form-spinner" />
-                                        Сохранение...
-                                    </>
-                                ) : (
-                                    <>
-                                        <IonIcon icon={saveOutline} slot="start" />
-                                        Закрыть
-                                    </>
-                                )}
-                            </IonButton>
-                    </div>
-                </IonCardContent>
-            </IonCard>
+            {/* ФУТЕР */}
+            <div className="address-footer">
+                <button 
+                    className="save-btn" 
+                    onClick={handleSave}
+                    disabled={saving || !standardizedAddress.address}
+                >
+                    {saving ? (
+                        <IonSpinner name="crescent" color="light" style={{width: 20, height: 20}} />
+                    ) : (
+                        <>
+                            <IonIcon icon={saveOutline} />
+                            Сохранить адрес
+                        </>
+                    )}
+                </button>
+            </div>
+
         </div>
     );
 }

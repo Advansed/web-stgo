@@ -1,603 +1,279 @@
-/* ============================================
-   ОСНОВНЫЕ СТИЛИ СТРАНИЦЫ ЗАЯВОК
-   ============================================ */
-
-.invoices-page {
-    --ion-background-color: #f8fafc;
-}
-
-.invoices-content {
-    padding: 0 16px 100px;
-}
-
-.search-container {
-    padding: 16px;
-    background: var(--ion-background-color);
-    border-bottom: 1px solid var(--ion-color-step-100);
-}
-
-.filters-container {
-    padding: 0 16px 16px;
-    background: var(--ion-background-color);
-}
-
-.invoices-list {
-    background: transparent;
-}
-
-/* ============================================
-   КАРТОЧКИ ЗАЯВОК
-   ============================================ */
-
-.invoice-card {
-    margin-bottom: 16px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.invoice-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.invoice-card--overdue {
-    border-left: 4px solid var(--ion-color-danger);
-}
-
-.invoice-card--urgent {
-    border-left: 4px solid var(--ion-color-warning);
-}
-
-.invoice-card--normal {
-    border-left: 4px solid var(--ion-color-success);
-}
-
-.invoice-card__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.invoice-card__number {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--ion-color-primary);
-}
-
-.invoice-card__number ion-icon {
-    font-size: 18px;
-}
-
-.invoice-card__status {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.invoice-card__status ion-icon {
-    font-size: 14px;
-}
-
-.invoice-card__content {
-    margin-bottom: 16px;
-}
-
-.invoice-card__item {
-    --padding-start: 0;
-    --inner-padding-end: 0;
-    --min-height: 44px;
-    margin-bottom: 8px;
-}
-
-.invoice-card__item ion-icon[slot="start"] {
-    margin-right: 12px;
-    font-size: 18px;
-}
-
-.invoice-card__item h3 {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ion-color-medium);
-    margin: 0 0 4px 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.invoice-card__item p {
-    font-size: 14px;
-    margin: 0;
-    color: var(--ion-color-dark);
-    line-height: 1.4;
-}
-
-.phone-button {
-    --padding-start: 8px;
-    --padding-end: 8px;
-    height: 36px;
-    width: 36px;
-}
-
-.invoice-card__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 12px;
-    border-top: 1px solid var(--ion-color-step-100);
-}
-
-.invoice-card__term {
-    flex: 1;
-}
-
-.invoice-card__line {
-    font-size: 12px;
-}
-
-/* ============================================
-   ФИЛЬТРЫ
-   ============================================ */
-
-.invoice-filters {
-    margin-bottom: 16px;
-}
-
-.quick-filters {
-    margin-bottom: 12px;
-}
-
-.status-chip {
-    --border-radius: 20px;
-    height: 32px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin: 2px;
-}
-
-.status-chip--active {
-    transform: scale(1.05);
-}
-
-.status-chip ion-icon {
-    font-size: 14px;
-    margin-right: 4px;
-}
-
-.advanced-filters {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.filters-active {
-    --background: var(--ion-color-primary);
-    --color: white;
-}
-
-.results-counter {
-    margin-left: 12px;
-}
-
-.advanced-filters-content {
-    padding: 16px;
-    min-width: 300px;
-}
-
-.filter-actions {
-    padding-top: 16px;
-    border-top: 1px solid var(--ion-color-step-100);
-}
-
-.active-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.active-filters ion-chip {
-    --border-radius: 16px;
-}
-
-/* ============================================
-   МОДАЛЬНОЕ ОКНО
-   ============================================ */
-
-.invoice-modal {
-    --background: #f8fafc;
-}
-
-.status-card {
-    margin: 16px;
-    border-radius: 12px;
-}
-
-.status-card--overdue {
-    --background: linear-gradient(135deg, var(--ion-color-danger-tint), var(--ion-color-danger));
-    --color: white;
-}
-
-.status-card--urgent {
-    --background: linear-gradient(135deg, var(--ion-color-warning-tint), var(--ion-color-warning));
-    --color: white;
-}
-
-.status-card--normal {
-    --background: linear-gradient(135deg, var(--ion-color-success-tint), var(--ion-color-success));
-    --color: white;
-}
-
-.status-content {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.status-icon {
-    font-size: 48px;
-}
-
-.status-info h2 {
-    margin: 0 0 4px 0;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.status-info p {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 14px;
-}
-
-.status-badge {
-    margin-left: auto;
-}
-
-.modal-actions {
-    padding: 16px;
-    gap: 12px;
-    display: flex;
-    flex-direction: column;
-}
-
-.call-button {
-    --background: var(--ion-color-success);
-}
-
-.close-button {
-    --border-color: var(--ion-color-medium);
-    --color: var(--ion-color-medium);
-}
-
-/* ============================================
-   СОСТОЯНИЯ ЗАГРУЗКИ И ОШИБОК
-   ============================================ */
-
-.invoices-skeleton {
-    padding: 0 16px;
-}
-
-.invoices-skeleton ion-card {
-    margin-bottom: 16px;
-}
-
-.invoices-error,
-.invoices-empty {
-    padding: 16px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 50vh;
-}
-
-.error-content,
-.empty-content {
-    text-align: center;
-    padding: 40px 20px;
-}
-
-.error-icon,
-.empty-icon {
-    font-size: 64px;
-    color: var(--ion-color-medium);
-    margin-bottom: 16px;
-}
-
-.error-content h2,
-.empty-content h2 {
-    margin: 0 0 12px 0;
-    font-size: 20px;
-    color: var(--ion-color-dark);
-}
-
-.error-content p,
-.empty-content p {
-    margin: 0 0 24px 0;
-    color: var(--ion-color-medium);
-    line-height: 1.5;
-}
-
-/* ============================================
-   АДАПТИВНОСТЬ
-   ============================================ */
-
-@media (max-width: 576px) {
-    .invoices-content {
-        padding: 0 8px 100px;
-    }
-    
-    .search-container,
-    .filters-container {
-        padding: 12px 8px;
-    }
-    
-    .invoice-card {
-        margin-bottom: 12px;
-    }
-    
-    .invoice-card__header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-    
-    .invoice-card__status {
-        align-self: flex-end;
-    }
-    
-    .quick-filters ion-col {
-        padding: 2px;
-    }
-    
-    .status-chip {
-        font-size: 12px;
-        height: 28px;
-    }
-    
-    .advanced-filters {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-    }
-    
-    .status-content {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .status-icon {
-        font-size: 40px;
-    }
-    
-    .modal-actions {
-        position: sticky;
-        bottom: 0;
-        background: var(--ion-background-color);
-        border-top: 1px solid var(--ion-color-step-100);
-    }
-}
-
-/* ============================================
-   ТЕМНАЯ ТЕМА
-   ============================================ */
-
-@media (prefers-color-scheme: dark) {
-    .invoices-page {
-        --ion-background-color: #1a1a1a;
-    }
-    
-    .invoice-card {
-        --background: #2a2a2a;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-    
-    .invoice-card:hover {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    }
-    
-    .invoice-card__item h3 {
-        color: var(--ion-color-medium);
-    }
-    
-    .invoice-card__item p {
-        color: var(--ion-color-light);
-    }
-    
-    .search-container,
-    .filters-container {
-        background: var(--ion-background-color);
-        border-bottom: 1px solid var(--ion-color-step-150);
-    }
-    
-    .invoice-card__footer {
-        border-top: 1px solid var(--ion-color-step-150);
-    }
-    
-    .status-card--overdue {
-        --background: linear-gradient(135deg, #dc2626, #b91c1c);
-    }
-    
-    .status-card--urgent {
-        --background: linear-gradient(135deg, #d97706, #b45309);
-    }
-    
-    .status-card--normal {
-        --background: linear-gradient(135deg, #059669, #047857);
-    }
-}
-
-/* ============================================
-   АНИМАЦИИ
-   ============================================ */
-
-@keyframes slideInUp {
-    from {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.invoice-card {
-    animation: slideInUp 0.3s ease;
-}
-
-.modal-actions {
-    animation: slideInUp 0.4s ease;
-}
-
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-
-@media (prefers-reduced-motion: reduce) {
-    .invoice-card,
-    .status-chip,
-    .modal-actions {
-        animation: none;
-        transition: none;
-    }
-    
-    .invoice-card:hover {
-        transform: none;
-    }
-}
-
-/* Увеличение размера кнопок для touch */
-@media (pointer: coarse) {
-    .phone-button {
-        height: 44px;
-        width: 44px;
-    }
-    
-    .status-chip {
-        height: 36px;
-        min-height: 36px;
-    }
-}
-
-/* Навигационный переключатель */
-.invoices-breadcrumb {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--ion-color-light);
-    border-bottom: 1px solid var(--ion-color-medium);
-    gap: 12px;
-}
-
-.breadcrumb-back-btn {
-    --color: var(--ion-color-medium-shade);
-    margin: 0;
-}
-
-.breadcrumb-nav {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-    justify-content: center;
-}
-
-.breadcrumb-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 8px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    min-width: 60px;
-    cursor: pointer;
-}
-
-.breadcrumb-item.accessible:hover {
-    background: var(--ion-color-primary-tint);
-}
-
-.breadcrumb-item.active {
-    background: var(--ion-color-primary);
-    color: white;
-}
-
-.breadcrumb-item.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.breadcrumb-number {
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 1;
-}
-
-.breadcrumb-label {
-    font-size: 11px;
-    text-align: center;
-    white-space: nowrap;
-}
-
-.breadcrumb-separator {
-    color: var(--ion-color-medium);
-    font-weight: 300;
-    margin: 0 4px;
-}
-
-/* Страницы заявок */
-.invoice-page {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.invoice-page-content {
-    flex: 1;
-    overflow: auto;
-}
-
-.invoice-page-header {
-    padding: 16px;
-    background: white;
-    border-bottom: 1px solid var(--ion-color-light-shade);
-}
-
-.invoice-page-title {
-    margin: 0 0 8px 0;
-    color: var(--ion-color-dark);
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.invoice-page-subtitle {
-    margin: 0;
-    color: var(--ion-color-medium-shade);
-    font-size: 14px;
-}
-
-/* Мобильная адаптация */
-@media (max-width: 768px) {
-    .breadcrumb-item {
-        min-width: 50px;
-        padding: 6px;
-    }
-    
-    .breadcrumb-label {
-        font-size: 10px;
-    }
-    
-    .breadcrumb-number {
-        font-size: 12px;
-    }
-}
+/* InvoiceView.module.css */
+
+/* --- МОДАЛЬНОЕ ОКНО --- */
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 11000;
+  padding: 16px;
+}
+
+.modalContent {
+  width: 100%;
+  max-width: 550px;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* --- ШАПКА --- */
+.modalHeader {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  padding: 16px 20px;
+  color: white;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.headerButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.iconBtn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
+}
+
+.iconBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* --- ТЕЛО --- */
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
+  background: #f8fafc;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- БЛОК НОМЕРА --- */
+.heroSection {
+  background: white;
+  padding: 24px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.heroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heroNumber {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.heroDate {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* СТАТУСЫ */
+.statusBadge {
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.statusNew { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+.statusWork { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+.statusDone { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.statusFail { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+
+/* --- СПИСОК ДЕТАЛЕЙ --- */
+.detailsList {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 12px;
+}
+
+.detailCard {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+/* Красивые иконки */
+.iconBox {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.bgBlue { background: #eff6ff; color: #3b82f6; }
+.bgRed { background: #fef2f2; color: #ef4444; }
+.bgGreen { background: #f0fdf4; color: #10b981; }
+.bgOrange { background: #fff7ed; color: #f97316; }
+.bgPurple { background: #faf5ff; color: #8b5cf6; }
+.bgDark { background: #f1f5f9; color: #475569; }
+
+.contentData {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.label {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.value {
+  font-size: 15px;
+  font-weight: 500;
+  color: #0f172a;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.subValue {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Кнопки внутри карточек */
+.actionSlot {
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.miniBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
+}
+
+.miniBtn:hover {
+  background: #f8fafc;
+  color: #3b82f6;
+  border-color: #cbd5e1;
+}
+
+.callBtn {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+}
+
+.callBtn:active { transform: scale(0.95); }
+
+/* --- ФУТЕР --- */
+.modalFooter {
+  padding: 16px 20px;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+}
+
+.mainBtn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.2);
+  transition: opacity 0.2s;
+}
+
+.mainBtn:hover { opacity: 0.9; }

@@ -1,49 +1,69 @@
-// src/Store/invoicesStore.ts
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { post } from './api';
 
 interface InvoicesStore {
-  update:     number
-  data:       any;
-  setData:    (invoices: any) => void;
-  setUpdate:  ( upd: number) => void;
+  update:       number;
+  data:         any[];
+  setData:      (invoices: any[]) => void;
+  setUpdate:    (upd: number) => void;
+  // Экшн для назначения
+  assignWorker: (token: string, invoiceId: string, workerObj: any) => Promise<any>;
 }
-// ============================================
-// ZUSTAND STORE
-// ============================================
 
 export const useInvoicesStore = create<InvoicesStore>()(
   devtools(
-    (set) => ({
+    (set, get) => ({
+      update: 1,
+      data:   [],
 
-      update:           1,  
+      setData:   (invoices) => set({ data: invoices }),
+      setUpdate: (upd)      => set({ update: upd }),
 
-      data:             [],
-
-      setData:          ( invoices)  => set({ data: invoices }),
-
-      setUpdate:        ( upd ) => set({ update: upd })
-    
+      // === ГЛАВНАЯ ФУНКЦИЯ ===
+      // Мы принимаем сюда сразу ОБЪЕКТ сотрудника {id, name}, чтобы обновить UI
+      assignWorker: async (token, invoiceId, workerObj) => {
+        try {
+            // 1. Отправляем на сервер только ID
+            const res = await post('set_inv_worker', { token, id: invoiceId, worker: workerObj.id });
+            
+            if (res.success) {
+                // 2. МГНОВЕННО обновляем глобальный список заявок
+                const currentData = get().data;
+                const newData = currentData.map((inv: any) => {
+                    // Ищем нужную заявку по ID (или Ссылке)
+                    if (inv.id === invoiceId || inv.Ссылка === invoiceId) {
+                        return { 
+                            ...inv, 
+                            worker: workerObj, // Вставляем объект мастера
+                            status: 'В работе', // Меняем статус
+                            Статус: 'В работе'  // Дублируем для 1С
+                        };
+                    }
+                    return inv;
+                });
+                
+                // 3. Записываем в стейт -> Карта и Список перерисуются сами
+                set({ data: newData }); 
+                return res;
+            } else {
+                return res;
+            }
+        } catch (e) {
+            console.error(e);
+            return { success: false, message: 'Ошибка сети' };
+        }
+      }
     }),
     { name: 'invoices-store' }
   )
 );
 
-// ============================================
-// СЕЛЕКТИВНЫЕ ХУКИ ДЛЯ ПОЛУЧЕНИЯ ДАННЫХ
-// ============================================
-
-export const useInvoices                = () => {
-  const update      = useInvoicesStore( (state) => state.update)
-  const data        = useInvoicesStore( (state) => state.data )
-  const setData     = useInvoicesStore( (state) => state.setData )
-  const setUpdate   = useInvoicesStore( (state) => state.setUpdate )
-  return { data, setData, update, setUpdate }
+export const useInvoices = () => {
+  const update       = useInvoicesStore((state) => state.update);
+  const data         = useInvoicesStore((state) => state.data);
+  const setData      = useInvoicesStore((state) => state.setData);
+  const setUpdate    = useInvoicesStore((state) => state.setUpdate);
+  const assignWorker = useInvoicesStore((state) => state.assignWorker); // Экспортируем функцию
+  return { data, setData, update, setUpdate, assignWorker };
 };
-
-
-// ============================================
-// ACTIONS (совместимость)
-// ============================================
-

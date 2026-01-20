@@ -1,7 +1,6 @@
-// Оптимизированный LicsForm.tsx с корпоративными CSS классами
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { IonModal, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonLoading } from '@ionic/react';
-import { close, save } from 'ionicons/icons';
+import React, { useState, useCallback, useMemo } from 'react';
+import { IonModal, IonLoading, IonIcon } from '@ionic/react';
+import { closeOutline, searchOutline, locationOutline } from 'ionicons/icons';
 import { useLics } from './useFindLics';
 import './FindLics.css';
 import DropdownFilter from './DropDownFilter';
@@ -15,8 +14,6 @@ interface LicsFormProps {
 }
 
 const FindLics: React.FC<LicsFormProps> = ({ 
-    address, 
-    invoiceId, 
     onSelect, 
     isOpen, 
     onClose 
@@ -26,10 +23,8 @@ const FindLics: React.FC<LicsFormProps> = ({
         loadSettlements, loadStreets, loadHouses, loadKv, loadLics 
     } = useLics();
 
-    const [ info,   setInfo ] = useState('')
-    const [ lic,    setLic  ] = useState('')
+    const [ info, setInfo ] = useState('Выберите улус или город')
 
-    // Оптимизированный handleSelect с useCallback
     const handleSelect = useCallback((item: any) => {
         switch (item.type) {
             case "ulus": 
@@ -60,136 +55,88 @@ const FindLics: React.FC<LicsFormProps> = ({
                 onSelect( item )
                 break;
         }
-    }, [loadSettlements, loadStreets, loadHouses, loadKv, loadLics, info, lic]);
+    }, [loadSettlements, loadStreets, loadHouses, loadKv, loadLics, info, onSelect]);
 
-    // Мемоизированная конфигурация уровней - один useEffect вместо множественных
     const levelConfig = useMemo(() => {
         const config: any = [];
 
-        // Улусы всегда показываем первыми
         if (uluses.length > 0) {
-            config.length = 0;
             config.push({
-                type: 'ulus',
-                label: 'Улус',
+                type: 'ulus', label: 'Район / Улус',
                 render: () => <DropdownFilter options={uluses} onSelect={handleSelect} />
             });
         }
-
-        // Поселения
         if (settlements.length > 0) {
-            config.length = 0;
             config.push({
-                type: 'settle',
-                label: 'Населенный пункт',
+                type: 'settle', label: 'Населенный пункт',
                 render: () => <DropdownFilter options={settlements} onSelect={handleSelect} />
             });
         }
-
-        // Улицы
         if (streets.length > 0) {
-            config.length = 0;
             config.push({
-                type: 'street',
-                label: 'Улица',
+                type: 'street', label: 'Улица',
                 render: () => <DropdownFilter options={streets} onSelect={handleSelect} />
             });
         }
-
-        // Дома
         if (houses.length > 0) {
-            config.length = 0;
             config.push({
-                type: 'house',
-                label: 'Дом',
+                type: 'house', label: 'Дом',
                 render: () => <DropdownFilter options={houses} onSelect={handleSelect} />
             });
         }
-
-        // Квартиры
         if (kv.length > 0) {
-            config.length = 0;
             config.push({
-                type: 'kv',
-                label: 'Квартира',
+                type: 'kv', label: 'Квартира',
                 render: () => <DropdownFilter options={kv} onSelect={handleSelect} />
             });
         }
-
-        // Лицевые счета
         if (lics.length > 0) {
-            config.length = 0;
             config.push({
-                type: 'lics',
-                label: 'Лицевой счет',
+                type: 'lics', label: 'Лицевой счет',
                 render: () => <DropdownFilter options={lics} onSelect={handleSelect} />
             });
         }
-
         return config;
     }, [uluses, settlements, streets, houses, kv, lics, handleSelect]);
 
-    // Мемоизированные обработчики событий
-    const handleClose = useCallback(() => {
-        onClose();
-    }, [onClose]);
-
-    const handleSave = useCallback(() => {
-
-        if (onSelect) {
-            onSelect( lic );
-        }
-    }, [onSelect]);
-
     return (
         <>
-            <IonLoading isOpen={loading} />
+            <IonLoading isOpen={loading} message="Загрузка данных..." />
+            
             <IonModal 
                 isOpen={isOpen} 
-                onDidDismiss={handleClose}
+                onDidDismiss={onClose}
                 className="lics-form-modal"
             >
-                <IonHeader className="page-header">
-                    <IonToolbar>
-                        <IonTitle>Поиск лицевого счета</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton 
-                                fill="clear" 
-                                onClick={handleSave}
-                                className="close-button"
-                            >
-                                <IonIcon icon = { save } />
-                            </IonButton>
-                            <IonButton 
-                                fill="clear" 
-                                onClick={handleClose}
-                                className="close-button"
-                            >
-                                <IonIcon icon={close} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
+                {/* ШАПКА */}
+                <div className="find-lics-header">
+                    <div className="find-lics-title">
+                        <IonIcon icon={searchOutline} />
+                        Поиск лицевого счета
+                    </div>
+                    <button onClick={onClose} className="close-btn">
+                        <IonIcon icon={closeOutline} />
+                    </button>
+                </div>
                 
-                <IonContent className="ion-padding">
-                    <div className="flex fl-space pb-1 corporate-info-section">
-                        { info }
+                {/* КОНТЕНТ */}
+                <div className="find-lics-content">
+                    {/* Хлебные крошки */}
+                    <div className="info-crumb-box">
+                        <IonIcon icon={locationOutline} className="info-crumb-icon"/>
+                        <span>{info}</span>
                     </div>
-                    <div className="space-y-4">
-                        {levelConfig.map((config, index) => (
-                            <div 
-                                key={`${config.type}-${index}`} 
-                                className="lics-level-container"
-                            >
-                                <label className="lics-level-label">
-                                    {config.label}
-                                </label>
-                                {config.render()}
-                            </div>
-                        ))}
-                    </div>
-                    
-                </IonContent>
+
+                    {/* Список уровней */}
+                    {levelConfig.map((config, index) => (
+                        <div key={`${config.type}-${index}`} className="lics-level-container">
+                            <label className="lics-level-label">
+                                {config.label}
+                            </label>
+                            {config.render()}
+                        </div>
+                    ))}
+                </div>
             </IonModal>
         </>
     );

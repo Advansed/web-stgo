@@ -1,14 +1,20 @@
 /* Page.css */
+
+/* === HEADER STYLE === */
 .page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.85); /* Более прозрачный для эффекта стекла */
+  backdrop-filter: blur(20px) saturate(180%); /* Сильное размытие (Apple style) */
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  z-index: 1000;
 }
 
 .page-toolbar {
   --background: transparent;
   --border-color: transparent;
-  --min-height: 70px;
-  padding: 0 16px;
+  --min-height: 70px; /* Чуть выше, чтобы дышалось */
+  padding: 0 24px;
 }
 
 .header-content {
@@ -16,253 +22,228 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 70px;
-  gap: 16px;
+  height: 100%;
+  gap: 24px;
 }
 
-/* Левая часть - логотип */
+/* --- LEFT: LOGO --- */
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   flex-shrink: 0;
+  width: 280px;
+}
+
+.logo-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .company-icon {
   font-size: 24px;
-  color: white;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 8px;
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
+  color: #1e3a8a; /* Корпоративный темно-синий */
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #bfdbfe;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
 }
 
 .company-info {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 2px;
 }
 
 .company-name {
-  color: white;
-  font-size: 1rem;
-  font-weight: 700;
-  white-space: nowrap;
-  letter-spacing: 0.5px;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
 }
 
-/* Центральная часть - заголовок */
+.company-sub {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Кнопка НАЗАД */
+.back-btn-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.2s ease;
+  color: #64748b;
+}
+
+.back-btn-wrapper:hover {
+  background: #f1f5f9;
+  color: #1e3a8a;
+  transform: translateX(-2px);
+}
+
+/* --- CENTER: TITLE --- */
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
-  min-width: 0;
+  align-items: center;
 }
 
 .page-title {
-  color: white;
-  font-size: 1.25rem;
+  color: #1e293b;
+  font-size: 1.1rem;
   font-weight: 700;
   text-align: center;
   padding: 0;
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
 
-/* Правая часть - пользователь и кнопки */
+/* --- RIGHT: USER & ACTIONS --- */
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: flex-end;
+  gap: 20px;
   flex-shrink: 0;
+  width: 280px;
 }
 
-.user-info-compact {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 6px 12px;
-  border-radius: 25px;
-  backdrop-filter: blur(10px);
-}
-
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar-icon {
-  font-size: 16px;
-  color: white;
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
-}
-
-.user-name {
-  color: white;
-  font-size: 0.85rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* Кнопки действий */
+/* Action Buttons (Add, Refresh) */
 .action-buttons {
   display: flex;
-  align-items: center;
   gap: 8px;
-  margin: 0;
 }
 
 .action-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 20px;
-  color: white;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 8px;
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+  color: #64748b;
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+}
+
+.action-icon:hover {
+  background: #f8fafc;
+  color: #3b82f6;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  transform: translateY(-1px);
 }
 
 .action-icon:active {
-  background: rgba(255, 255, 255, 0.25);
-  transform: scale(0.95);
+  transform: translateY(0);
 }
 
-.back-icon {
-  font-size: 20px;
+/* User Profile Pill (ИДЕАЛЬНЫЙ ВАРИАНТ) */
+.user-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 6px 6px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-/* Существующие стили */
-.w-15 {
-  width: 20px;
+.user-profile-pill:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
 }
 
-.h-15 {
-  height: 20px;
+.user-text-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
 }
 
-.ml-05 {
-  margin-left: 8px;
+.user-name {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-/* Контент */
+.user-role {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Аватар с градиентом и инициалами */
+.user-avatar-gradient {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  /* Наш фирменный градиент */
+  background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 5px rgba(59, 130, 246, 0.3);
+  border: 2px solid white; /* Белая обводка для контраста */
+}
+
+/* --- CONTENT --- */
 ion-content {
-  --background: #f7fafc;
+  --background: #f8fafc;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-  .page-toolbar {
-    padding: 0 12px;
-    --min-height: 60px;
-  }
-  
-  .header-content {
-    min-height: 60px;
-    gap: 12px;
-  }
-  
-  .company-icon {
-    font-size: 20px;
-    padding: 6px;
-  }
-  
-  .company-name {
-    font-size: 0.9rem;
-  }
-  
-  .page-title {
-    font-size: 1.1rem;
-  }
-  
-  .user-info-compact {
-    gap: 8px;
-    padding: 5px 10px;
-  }
-  
-  .user-avatar {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .avatar-icon {
-    font-size: 14px;
-  }
-  
-  .user-name {
-    font-size: 0.8rem;
-  }
-  
-  .action-icon {
-    font-size: 18px;
-    padding: 6px;
-  }
+/* Scroll Fix for Invoices */
+.invoices-content::part(scroll) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-@media (max-width: 640px) {
-  .company-name {
-    display: none;
-  }
-  
-  .page-title {
-    font-size: 1rem;
-  }
-  
-  .user-name {
-    display: none;
-  }
-  
-  .user-info-compact {
-    padding: 6px;
-  }
+.invoices-content-inner {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  height: 100%;
 }
 
-@media (max-width: 480px) {
-  .page-toolbar {
-    padding: 0 8px;
-  }
-  
-  .header-content {
-    gap: 8px;
-  }
-  
-  .header-right {
-    gap: 8px;
-  }
-  
-  .action-buttons {
-    gap: 6px;
-  }
-  
-  .action-icon {
-    font-size: 16px;
-    padding: 5px;
-  }
+/* --- RESPONSIVE --- */
+@media (max-width: 900px) {
+  .page-toolbar { padding: 0 16px; }
+  .header-left, .header-right { width: auto; flex: 1; }
+  .header-center { display: none; } /* Скрываем заголовок по центру на планшетах */
+  .company-info { display: none; }
+  .user-text-info { display: none; } /* Оставляем только аватар на мобильных */
+  .user-profile-pill { padding: 4px; border: none; background: transparent; box-shadow: none; }
 }
 
-/* Анимации */
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.page-header {
-  animation: fadeInDown 0.4s ease-out;
+@media (max-width: 600px) {
+  .header-content { gap: 12px; }
+  .user-avatar-gradient { width: 32px; height: 32px; font-size: 12px; }
 }

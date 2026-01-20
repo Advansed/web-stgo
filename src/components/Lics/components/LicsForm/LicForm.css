@@ -1,463 +1,333 @@
-/* ============================================
-   ОСНОВНЫЕ ПЕРЕМЕННЫЕ
-   ============================================ */
-:root {
-  --lics-corporate-primary: #1e3a8a;
-  --lics-corporate-secondary: #3b82f6;
-  --lics-corporate-accent: #f97316;
-  --lics-corporate-success: #10b981;
-  --lics-corporate-warning: #f59e0b;
-  --lics-corporate-error: #ef4444;
-  --lics-corporate-text: #1f2937;
-  --lics-corporate-light-text: #6b7280;
-  --lics-corporate-border: #e5e7eb;
-  --lics-corporate-background: #f9fafb;
-  --lics-corporate-white: #ffffff;
-  --lics-corporate-blue: #3b82f6;
-}
+/* LicForm.css */
 
-/* ============================================
-   МОДАЛЬНОЕ ОКНО
-   ============================================ */
+/* --- МОДАЛЬНОЕ ОКНО (Обертка) --- */
+/* Используем те же классы анимации и структуры, что и в InvoiceView */
 .lics-form-modal {
-  --height: 90vh;
-  --width: 90vw;
-  --max-width: 800px;
-  --border-radius: 12px;
+  --height: auto;
+  --width: 100%;
+  --max-width: 600px;
+  --max-height: 90vh;
+  --border-radius: 20px;
+  --background: #f8fafc;
+  --box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
-.lics-form-modal ion-header ion-toolbar {
-  --background: var(--lics-corporate-primary);
-  --color: var(--lics-corporate-white);
-}
-
-.close-button {
-  --color: var(--lics-corporate-white);
-}
-
-/* ============================================
-   ЕДИНЫЙ CARD
-   ============================================ */
-.lic-form-card {
-  background: var(--lics-corporate-white);
-  border-radius: 12px;
-  margin: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+/* Переопределяем стили Ionic модалки для контента */
+.lics-form-modal::part(content) {
+  border-radius: 20px;
   overflow: hidden;
-}
-
-/* ============================================
-   ОСНОВНАЯ ИНФОРМАЦИЯ (СТАТИЧНАЯ)
-   ============================================ */
-.lic-main-info {
-  padding: 20px;
-  background: linear-gradient(135deg, var(--lics-corporate-primary), var(--lics-corporate-secondary));
-  color: var(--lics-corporate-white);
-}
-
-.lic-main-title {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.lic-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.lic-info-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
-.lic-info-field label {
-  font-size: 12px;
-  opacity: 0.8;
+/* --- ШАПКА --- */
+.lic-modal-header {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  padding: 16px 20px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+  flex-shrink: 0;
+  min-height: 64px;
+}
+
+.lic-modal-title {
+  font-size: 16px;
+  font-weight: 700;
   text-transform: uppercase;
-  font-weight: 500;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
 }
 
-.lic-info-value {
-  font-size: 14px;
-  font-weight: 600;
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
 }
+.close-btn:hover { background: rgba(255, 255, 255, 0.3); }
 
-/* ============================================
-   АККОРДЕОН КОНТЕЙНЕР
-   ============================================ */
-.accordion-container {
+/* --- КОНТЕНТ --- */
+.lic-content {
+  background: #f8fafc;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   padding: 0;
 }
 
-/* ============================================
-   АККОРДЕОН СЕКЦИИ
-   ============================================ */
-.accordion-section {
-  border-bottom: 1px solid var(--lics-corporate-border);
+/* --- ГЛАВНЫЙ БЛОК (HERO) --- */
+.lic-hero {
+  background: white;
+  padding: 24px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.accordion-section:last-child {
-  border-bottom: none;
-}
-
-.accordion-header {
-  width: 100%;
-  background: none;
-  border: none;
-  padding: 16px 20px;
+.hero-top {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+}
+
+.hero-code {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.hero-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
   align-items: center;
+  gap: 6px;
+}
+
+.account-badge {
+  background: #eff6ff;
+  color: #3b82f6;
+  border: 1px solid #dbeafe;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.hero-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.detail-icon {
+  color: #94a3b8;
+  font-size: 18px;
+  margin-top: 1px;
+}
+
+.detail-text {
+  color: #334155;
+  line-height: 1.4;
+}
+.detail-text strong {
+  color: #0f172a;
+  font-weight: 600;
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+/* --- АККОРДЕОН (СЕКЦИИ) --- */
+.accordion-container {
+  padding: 12px 20px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accordion-section {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.accordion-section.is-open {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Заголовок аккордеона */
+.accordion-header {
+  width: 100%;
+  background: white;
+  border: none;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-size: 16px;
+  transition: background 0.2s;
 }
 
 .accordion-header:hover {
-  background-color: var(--lics-corporate-background);
+  background: #f8fafc;
 }
 
-.accordion-title {
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Цветные квадратики иконок */
+.section-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.bg-red { background: #fef2f2; color: #ef4444; }
+.bg-blue { background: #eff6ff; color: #3b82f6; }
+.bg-green { background: #f0fdf4; color: #10b981; }
+.bg-orange { background: #fff7ed; color: #f97316; }
+
+.section-title {
+  font-size: 15px;
   font-weight: 600;
-  color: var(--lics-corporate-primary);
-  text-align: left;
+  color: #1e293b;
 }
 
-.accordion-icon {
-  color: var(--lics-corporate-light-text);
-  font-size: 20px;
-  transition: transform 0.2s ease;
+.section-status {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
 }
 
+.accordion-arrow {
+  color: #cbd5e1;
+  transition: transform 0.3s ease;
+}
+
+.is-open .accordion-arrow {
+  transform: rotate(180deg);
+  color: #3b82f6;
+}
+
+/* Тело аккордеона */
 .accordion-content {
-  overflow: hidden;
-  transition: max-height 0.3s ease, opacity 0.2s ease;
-}
-
-.accordion-content.closed {
-  max-height: 0;
+  height: 0;
   opacity: 0;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #fcfcfc;
 }
 
 .accordion-content.open {
-  max-height: 1000px;
+  height: auto;
   opacity: 1;
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid #f1f5f9;
 }
 
-.accordion-content > div {
-  padding: 0 20px 20px 20px;
-}
+/* --- ВНУТРЕННИЕ СПИСКИ --- */
 
-/* ============================================
-   ЗАДОЛЖЕННОСТЬ
-   ============================================ */
-.debt-section.debt-positive .accordion-title {
-  color: var(--lics-corporate-error);
-}
-
-.debt-section.debt-negative .accordion-title {
-  color: var(--lics-corporate-success);
-}
-
-.debt-total {
-  margin-bottom: 16px;
-  padding: 12px;
-  background: var(--lics-corporate-background);
-  border-radius: 8px;
-}
-
-.debt-total .lic-info-field {
-  flex-direction: row;
+/* Долги */
+.debt-card {
+  display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+.debt-total {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-weight: 700;
+}
+.debt-ok {
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  color: #166534;
 }
 
-.debt-total label {
-  color: var(--lics-corporate-text);
-  font-size: 14px;
-  font-weight: 500;
-  text-transform: none;
+.debt-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed #e2e8f0;
+  font-size: 13px;
 }
+.debt-row:last-child { border-bottom: none; }
 
-.debt-positive {
-  color: var(--lics-corporate-error) !important;
-  font-weight: 600;
-}
-
-.debt-negative {
-  color: var(--lics-corporate-success) !important;
-  font-weight: 600;
-}
-
-.debt-zero {
-  color: var(--lics-corporate-light-text) !important;
-}
-
-.debts-list {
+/* Счетчики */
+.counter-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
-.debt-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 12px;
-  background: var(--lics-corporate-white);
-  border: 1px solid var(--lics-corporate-border);
-  border-radius: 6px;
-}
-
-.debt-service {
-  font-weight: 500;
-  color: var(--lics-corporate-text);
-}
-
-.debt-sum {
-  font-weight: 600;
-  font-family: monospace;
-}
-
-/* ============================================
-   ПРИБОРЫ УЧЕТА
-   ============================================ */
-.counters-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.counter-item {
-  padding: 12px;
-  background: rgba(59, 130, 246, 0.02);
-  border: 1px solid var(--lics-corporate-border);
-  border-radius: 8px;
-  border-left: 4px solid var(--lics-corporate-blue);
-}
-
 .counter-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
 }
-
-.counter-code {
-  font-weight: 600;
-  color: var(--lics-corporate-primary);
-  font-size: 16px;
+.counter-name { font-weight: 600; font-size: 14px; color: #334155; }
+.counter-badge {
+  background: #eff6ff; color: #3b82f6; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase;
 }
-
-.counter-type {
-  background: var(--lics-corporate-accent);
-  color: var(--lics-corporate-white);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
+.counter-value {
+  font-size: 20px; font-weight: 700; color: #0f172a; font-family: monospace;
 }
+.counter-date { font-size: 12px; color: #94a3b8; }
 
-.counter-name {
-  font-weight: 500;
-  margin-bottom: 6px;
-  color: var(--lics-corporate-text);
-}
-
-.counter-data {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.counter-data span {
-  background: var(--lics-corporate-white);
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
-}
-
-/* ============================================
-   ДОГОВОРЫ
-   ============================================ */
-.agrees-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.agree-item {
+/* Договоры и Оборудование */
+.simple-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   padding: 12px;
-  background: rgba(16, 185, 129, 0.02);
-  border: 1px solid var(--lics-corporate-border);
-  border-radius: 8px;
-  border-left: 4px solid var(--lics-corporate-success);
+  margin-top: 10px;
 }
+.card-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+.text-label { color: #64748b; }
+.text-value { color: #0f172a; font-weight: 500; }
+.status-active { color: #16a34a; font-weight: 600; }
+.status-inactive { color: #dc2626; font-weight: 600; }
 
-.agree-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.agree-name {
-  font-weight: 600;
-  color: var(--lics-corporate-primary);
-}
-
-.agree-status {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-}
-
-.agree-status.активен {
-  background: var(--lics-corporate-success);
-  color: var(--lics-corporate-white);
-}
-
-.agree-status.завершен {
-  background: var(--lics-corporate-warning);
-  color: var(--lics-corporate-white);
-}
-
-.agree-status.приостановлен {
-  background: var(--lics-corporate-error);
-  color: var(--lics-corporate-white);
-}
-
-.agree-details {
-  font-size: 13px;
-  color: #6b7280;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* ============================================
-   ГАЗОВОЕ ОБОРУДОВАНИЕ
-   ============================================ */
-.equips-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.equip-item {
-  padding: 12px;
-  background: rgba(249, 115, 22, 0.02);
-  border: 1px solid var(--lics-corporate-border);
-  border-radius: 8px;
-  border-left: 4px solid var(--lics-corporate-accent);
-}
-
-.equip-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.equip-type {
-  font-weight: 600;
-  color: var(--lics-corporate-primary);
-  text-transform: uppercase;
-  font-size: 14px;
-}
-
-.equip-status {
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.equip-status.active {
-  background: var(--lics-corporate-success);
-  color: var(--lics-corporate-white);
-}
-
-.equip-status.inactive {
-  background: var(--lics-corporate-error);
-  color: var(--lics-corporate-white);
-}
-
-.equip-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.equip-name {
-  font-weight: 500;
-  color: var(--lics-corporate-text);
-  margin-bottom: 2px;
-}
-
-.equip-number {
-  font-size: 13px;
-  color: #6b7280;
-  font-family: monospace;
-}
-
-/* ============================================
-   ПУСТЫЕ СЕКЦИИ
-   ============================================ */
-.empty-section {
-  padding: 20px;
+.empty-state {
   text-align: center;
-  color: var(--lics-corporate-light-text);
+  padding: 20px;
+  color: #94a3b8;
+  font-size: 13px;
   font-style: italic;
-  background: var(--lics-corporate-background);
-  border-radius: 6px;
-}
-
-/* ============================================
-   АДАПТИВНОСТЬ
-   ============================================ */
-@media (max-width: 768px) {
-  .lic-form-card {
-    margin: 8px;
-  }
-  
-  .lic-info-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .lic-info-field {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  
-  .lic-info-value {
-    text-align: left;
-    max-width: 100%;
-  }
-  
-  .counter-data {
-    flex-direction: column;
-    gap: 6px;
-  }
-  
-  .agree-header,
-  .equip-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .debt-total .lic-info-field {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
