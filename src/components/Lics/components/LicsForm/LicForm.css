@@ -208,15 +208,33 @@
   flex-shrink: 0;
 }
 
-.bg-red { background: #fef2f2; color: #ef4444; }
-.bg-blue { background: #eff6ff; color: #3b82f6; }
-.bg-green { background: #f0fdf4; color: #10b981; }
-.bg-orange { background: #fff7ed; color: #f97316; }
+.bg-red + .header-text-row .status-badge { background: #fef2f2; color: #ef4444; }
+.bg-blue + .header-text-row .status-badge { background: #eff6ff; color: #3b82f6; }
+.bg-green + .header-text-row .status-badge { background: #f0fdf4; color: #16a34a; }
+.bg-orange + .header-text-row .status-badge { background: #fff7ed; color: #f97316; }
+
+.header-text-row {
+  display: flex;
+  align-items: center; /* Выравнивание по центру по вертикали */
+  gap: 10px;           /* Отступ между Названием и Цифрой */
+  flex-wrap: wrap;     /* Чтобы на маленьких экранах переносилось, если текст длинный */
+}
+
+.status-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f1f5f9; /* Серый фон по умолчанию */
+  color: #64748b;
+  white-space: nowrap; /* Чтобы текст не разрывался */
+}
 
 .section-title {
   font-size: 15px;
   font-weight: 600;
   color: #1e293b;
+  line-height: 1;      /* Убираем лишнюю высоту строки */
 }
 
 .section-status {

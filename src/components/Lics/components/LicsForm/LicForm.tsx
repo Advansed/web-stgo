@@ -16,7 +16,8 @@ import {
   locationOutline
 } from 'ionicons/icons';
 import './LicForm.css';
-import { formatDate, formatSum, getDebtStatus, getTotalDebt } from '../../useLics';
+// ДОБАВИЛ formatAddress В ИМПОРТЫ
+import { formatDate, formatSum, getDebtStatus, getTotalDebt, formatAddress } from '../../useLics';
 
 interface LicFormProps {
   isOpen: boolean;
@@ -25,12 +26,12 @@ interface LicFormProps {
   loading?: boolean;
 }
 
-// Компонент Аккордеона (обновленный дизайн)
+// Компонент Аккордеона
 const AccordionSection: React.FC<{
   title: string;
   subtitle?: string;
   icon: string;
-  colorClass: string; // 'bg-red', 'bg-blue' etc.
+  colorClass: string; 
   isOpen: boolean;
   onToggle: () => void;
   children: React.ReactNode;
@@ -41,11 +42,15 @@ const AccordionSection: React.FC<{
         <div className={`section-icon-box ${colorClass}`}>
           <IonIcon icon={icon} />
         </div>
-        <div>
+        
+        <div className="header-text-row">
           <div className="section-title">{title}</div>
-          {subtitle && <div className="section-status">{subtitle}</div>}
+          {subtitle && (
+             <div className="status-badge">{subtitle}</div>
+          )}
         </div>
       </div>
+      
       <IonIcon icon={chevronDown} className="accordion-arrow" />
     </button>
     <div className={`accordion-content ${isOpen ? 'open' : ''}`}>
@@ -61,7 +66,7 @@ const LicForm: React.FC<LicFormProps> = ({
   loading = false
 }) => {
   const [openSections, setOpenSections] = useState({
-    debts: true, // Долги открыты по умолчанию
+    debts: true, 
     counters: false,
     agrees: false,
     equips: false
@@ -76,14 +81,12 @@ const LicForm: React.FC<LicFormProps> = ({
 
   if (!licAccount) return null;
 
-  // Безопасное получение данных
   const debts = licAccount.debts || [];
   const counters = licAccount.counters || [];
   const agrees = licAccount.agrees || [];
   const equips = licAccount.equips || [];
 
   const totalDebt = getTotalDebt(debts);
-  const debtStatus = getDebtStatus(debts); // 'positive' (долг), 'negative' (переплата), 'none'
 
   return (
     <>
@@ -133,7 +136,8 @@ const LicForm: React.FC<LicFormProps> = ({
                  <IonIcon icon={locationOutline} className="detail-icon" />
                  <div className="detail-text">
                     <strong>Адрес</strong>
-                    {licAccount.address_go}
+                    {/* ВОТ ЗДЕСЬ ИСПРАВИЛ: теперь выводит address через форматтер */}
+                    {licAccount.address ? formatAddress(licAccount.address) : 'Адрес не указан'}
                  </div>
                </div>
             </div>
