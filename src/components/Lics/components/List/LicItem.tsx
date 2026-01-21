@@ -2,6 +2,15 @@
 import React from 'react';
 import styles from './List.module.css';
 import { formatAddress } from '../../useLics';
+import { IonIcon } from '@ionic/react';
+import { 
+  home, 
+  business, 
+  trashOutline, 
+  alertCircle, 
+  checkmarkCircle, 
+  wallet 
+} from 'ionicons/icons';
 
 export interface LicAccount {
   id: string;
@@ -33,6 +42,7 @@ const LicItem: React.FC<LicItemProps> = ({
   getTotalDebt,
   getDebtStatus
 }) => {
+  
   const handleDelete = (event: React.MouseEvent) => {
     event.stopPropagation();
     onLicDel(lic.code);
@@ -45,78 +55,50 @@ const LicItem: React.FC<LicItemProps> = ({
   const totalDebt = getTotalDebt(lic.debts);
   const debtStatus = getDebtStatus(lic.debts);
 
+  // Класс статуса (используем его на родителе)
+  const statusKey = `status${debtStatus.charAt(0).toUpperCase() + debtStatus.slice(1)}`;
+  const cardClass = `${styles.licItemCard} ${styles[statusKey]}`;
+  const textClass = styles[`text${debtStatus.charAt(0).toUpperCase() + debtStatus.slice(1)}`];
+
+  // Подбираем иконку
+  let StatusIcon = home;
+  if (debtStatus === 'positive') StatusIcon = alertCircle;
+  if (debtStatus === 'none') StatusIcon = checkmarkCircle;
+  if (debtStatus === 'negative') StatusIcon = wallet;
+
   return (
-    <div 
-      className={styles.licItemCard}
-      onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      aria-label={`Лицевой счет ${lic.code}. ${lic.name}`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
-    >
-      <div className={styles.licItemHeader}>
-        <div className={styles.licCode} title={`Лицевой счет: ${lic.code}`}>
-          {lic.code}
-        </div>
-        
-        <div className={styles.licActions}>
-          <div className={styles.debtContainer}>
-            <span 
-              className={`${styles.debtSum} ${styles[`debt${debtStatus.charAt(0).toUpperCase() + debtStatus.slice(1)}`]}`}
-              title={`Общая задолженность: ${formatSum(totalDebt)}`}
-            >
-              {formatSum(totalDebt)}
-            </span>
-            
-            {debtStatus === 'positive' && (
-              <span 
-                className={styles.debtIndicator}
-                aria-label="Имеется задолженность"
-                title="Имеется задолженность"
-              >
-                ●
-              </span>
-            )}
-          </div>
-          
-          <button 
-            className={styles.deleteButton}
-            onClick={handleDelete}
-            title="Удалить лицевой счет"
-            aria-label={`Удалить лицевой счет ${lic.code}`}
-          >
-            🗑️
-          </button>
-        </div>
-      </div>
+    <div className={cardClass} onClick={handleClick}>
       
-      <div className={styles.licItemBody}>
-        <div 
-          className={styles.licName}
-          title={lic.name}
-        >
-          {lic.name}
-        </div>
-        
-        <div 
-          className={styles.licAddress}
-          title={`Адрес: ${formatAddress(lic.address)}`}
-        >
-          {formatAddress(lic.address || '')}
-        </div>
-        
-        <div 
-          className={styles.licPlot}
-          title={`Участок: ${lic.plot}`}
-        >
-          Участок: {lic.plot}
+      {/* 1. Иконка статуса */}
+      <div className={styles.iconBox}>
+        <IonIcon icon={StatusIcon} />
+      </div>
+
+      {/* 2. Информация */}
+      <div className={styles.infoBox}>
+        <div className={styles.licCode}>{lic.code}</div>
+        <div className={styles.licAddress}>
+          {lic.address ? formatAddress(lic.address) : 'Адрес не указан'}
         </div>
       </div>
+
+      {/* 3. Сумма */}
+      <div className={styles.actionsBox}>
+        <span className={`${styles.sumValue} ${textClass}`}>
+          {formatSum(totalDebt)}
+        </span>
+        <span className={`${styles.sumLabel} ${textClass}`}>
+            {debtStatus === 'positive' ? 'Долг' : 'Баланс'}
+        </span>
+
+        <button 
+          className={styles.deleteButton} 
+          onClick={handleDelete}
+        >
+            <IonIcon icon={trashOutline} />
+        </button>
+      </div>
+
     </div>
   );
 };

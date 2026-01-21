@@ -1,420 +1,319 @@
-// Обновленный InvExecute.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import styles from './InvExecute.module.css';
 import { useWorkers } from '../../../Store/navigationStore';
-import { IonChip } from '@ionic/react';
+import { IonChip, IonIcon, IonSpinner } from '@ionic/react';
 import { Invoice } from './InvoiceList/InvoiceItem';
+import { 
+  closeOutline, personOutline, statsChartOutline, chatbubbleOutline, 
+  star, checkmarkCircle, alertCircle, timeOutline, flagOutline, saveOutline,
+  searchOutline, filterOutline, constructOutline, closeCircleOutline
+} from 'ionicons/icons';
 
 interface Executor {
-  id:                   string;
-  name:                 string;
-  role:                 string;
-  rating:               number;
-  currentWorkload:      number;
-  isAvailable:          boolean;
+  id: string; name: string; role: string;
+  rating: number; currentWorkload: number; isAvailable: boolean;
 }
 
-// Типы статусов
-type WorkStatus = 'Принята' | 'Передана' | 'Выполнена' | 'Отложена' | 'Отклонена';
+// ВЕРНУЛ ПРАВИЛЬНЫЕ СТАТУСЫ, КОТОРЫЕ ПОНИМАЕТ СЕРВЕР
+type WorkStatus = 'В работе' | 'Выполнена' | 'Отложена' | 'Отменена' | 'Новый';
 
 interface ActExecutionModalProps {
-  invoice:              Invoice;
-  isOpen:               boolean;
-  onClose:              () => void;
-  onAssignToExecutor:   ( assignmentData: { 
-    worker:             Executor; 
-    comment:            string; 
-    priority:           string;
-    status:             WorkStatus;
-  } ) => Promise<void>;
+  invoice: Invoice;
+  isOpen: boolean;
+  onClose: () => void;
+  onAssignToExecutor: (data: { worker: Executor; comment: string; priority: string; status: WorkStatus; }) => Promise<void>;
 }
 
-const getStatus = ( status ) => {
-    if( status === "Новый" ) 
-        return "В работе"  as WorkStatus
-    
-    if( status === "В работе" ) 
-        return "Выполнен"  as WorkStatus
-    
-    return 'В работе' as WorkStatus
+// Логика переключения следующего статуса
+const getNextStatus = (current: string): WorkStatus => {
+    if (current === "Новый") return "В работе";
+    if (current === "В работе") return "Выполнена";
+    return 'В работе';
 }
 
 export const InvExecute: React.FC<ActExecutionModalProps> = ({
-  invoice,
-  isOpen,
-  onClose,
-  onAssignToExecutor
+  invoice, isOpen, onClose, onAssignToExecutor
 }) => {
-  const [selectedExecutor, setSelectedExecutor] = useState<any>();
-  const [comment, setComment] = useState('');
-  const [priority, setPriority] = useState<string>('normal');
-  const [status, setStatus] = useState<WorkStatus>( getStatus( invoice.status ));
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAllExecutors, setShowAllExecutors] = useState(true);
-  
-  // Получаем workers из store
+  // ФИКС: Сразу ищем текущего исполнителя в списке, чтобы он был выбран
   const { workers } = useWorkers();
 
-  // Преобразуем workers в формат исполнителей
-  const executors: Executor[] = workers.map((worker: Executor) => ({
-    id:                 worker.id || worker.id || Math.random().toString(),
-    name:          worker.name || 'Неизвестный исполнитель',
-    role:               worker.role || 'Специалист',
-    rating:             worker.rating || 4.5,
-    currentWorkload:    worker.currentWorkload || 0,
-    isAvailable:        worker.isAvailable !== false
-  }));
+  const executors: Executor[] = useMemo(() => {
+    return workers.map((worker: any) => ({
+      id: worker.id || Math.random().toString(),
+      name: worker.name || 'Неизвестный',
+      role: worker.role || 'Специалист',
+      rating: worker.rating || 5.0,
+      currentWorkload: worker.currentWorkload || 0,
+      isAvailable: worker.isAvailable !== false
+    }));
+  }, [workers]);
 
+  // Находим текущего работника заявки
+  const currentExecutor = useMemo(() => {
+     if (!invoice.worker) return undefined;
+     return executors.find(e => e.name === invoice.worker.name || e.id === invoice.worker.id);
+  }, [invoice.worker, executors]);
+
+  const [selectedExecutor, setSelectedExecutor] = useState<any>(currentExecutor);
+  const [comment, setComment] = useState('');
+  const [priority, setPriority] = useState<string>('normal');
+  
+  // Ставим статус, который сервер ждет
+  const [status, setStatus] = useState<WorkStatus>(getNextStatus(invoice.status));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Поиск и фильтры
+  const [searchText, setSearchText] = useState('');
+  const [filterWorkload, setFilterWorkload] = useState<'all' | 'low' | 'high'>('all');
+  const [filterRating, setFilterRating] = useState<boolean>(false);
+
+  // Если вдруг executors подгрузились позже, обновляем выбранного
   useEffect(() => {
-    if (isOpen && workers.length === 0) {
-      console.log('Загрузка списка исполнителей...');
-    }
-  }, [isOpen, workers.length]);
+     if (currentExecutor && !selectedExecutor) {
+         setSelectedExecutor(currentExecutor);
+     }
+  }, [currentExecutor]);
+
+  const filteredExecutors = useMemo(() => {
+    return executors
+      .filter(ex => {
+        if (searchText && !ex.name.toLowerCase().includes(searchText.toLowerCase())) return false;
+        if (filterWorkload === 'low' && ex.currentWorkload > 3) return false;
+        if (filterWorkload === 'high' && ex.currentWorkload < 5) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        if (filterRating) return b.rating - a.rating;
+        if (a.isAvailable && !b.isAvailable) return -1;
+        if (!a.isAvailable && b.isAvailable) return 1;
+        return 0;
+      });
+  }, [executors, searchText, filterWorkload, filterRating]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Разрешаем сохранять, даже если исполнитель не менялся (если он был)
     if (!selectedExecutor) return;
 
     setIsSubmitting(true);
     try {
-      await onAssignToExecutor({
-        worker: selectedExecutor, 
-        comment, 
-        priority,
-        status
-      });
+      await onAssignToExecutor({ worker: selectedExecutor, comment, priority, status });
       onClose();
-      // Сброс формы
-      setSelectedExecutor('');
-      setComment('');
-      setPriority('normal');
-      setStatus('Принята');
-      setShowAllExecutors(true);
     } catch (error) {
-      console.error('Ошибка при назначении исполнителя:', error);
+      console.error('Ошибка:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleExecutorClick = (executor: Executor) => {
-    if (!executor.isAvailable) return;
-    
-    // Если кликаем на уже выбранного исполнителя - отменяем выбор
-    if (selectedExecutor?.id === executor.id) {
-      setSelectedExecutor(null);
-      setShowAllExecutors(true);
-    } else {
-      // Выбираем нового исполнителя и показываем только его
-      setSelectedExecutor(executor);
-      setShowAllExecutors(false);
-    }
-  };
-
-  const handleCancelSelection = () => {
-    setSelectedExecutor(null);
-    setShowAllExecutors(true);
-  };
-
-  const getWorkloadColor      = (workload: number) => {
-    if (workload < 3) return styles.workloadLow;
-    if (workload < 6) return styles.workloadMedium;
-    return styles.workloadHigh;
-  };
-
-  const getWorkloadText       = (workload: number) => {
+  const getWorkloadText = (workload: number) => {
     if (workload < 3) return 'Низкая';
     if (workload < 6) return 'Средняя';
     return 'Высокая';
   };
 
-  // Функция для получения полного адреса
-  const getFullAddress        = () => {
-    if (!invoice.address) return 'Адрес не указан';
-    return invoice.address.address;
+  const getWorkloadClass = (workload: number) => {
+    if (workload < 3) return styles.workloadLow;
+    if (workload < 6) return styles.workloadMedium;
+    return styles.workloadHigh;
   };
 
-  // Функция для получения класса цвета статуса
-  const getStatusColorClass   = (statusOption: WorkStatus) => {
-    switch (statusOption) {
-      case 'Принята':     return styles.statusNew;
-      case 'Передана':  return styles.statusInProgress;
-      case 'Выполнена':  return styles.statusCompleted;
-      case 'Отложена':   return styles.statusOnHold;
-      case 'Отклонена':  return styles.statusRejected;
-      default:          return '';
+  // Правильные цвета для статусов
+  const getStatusColor = (st: WorkStatus) => {
+      switch(st) {
+          case 'Выполнена': return 'success';
+          case 'В работе': return 'warning'; // Оранжевый для "В работе"
+          case 'Отменена': return 'danger';
+          case 'Новый': return 'primary';
+          case 'Отложена': return 'medium';
+          default: return 'primary';
+      }
+  };
+
+  const getStatusIcon = (st: WorkStatus) => {
+    switch (st) {
+      case 'В работе': return constructOutline;
+      case 'Выполнена': return checkmarkCircle;
+      case 'Отложена': return alertCircle;
+      case 'Отменена': return closeCircleOutline;
+      default: return statsChartOutline;
     }
   };
 
   if (!isOpen) return null;
 
-  // Определяем, какие исполнители показывать
-  const executorsToShow = showAllExecutors 
-    ? executors 
-    : [selectedExecutor].filter(Boolean);
-
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        {/* Заголовок модального окна */}
+        
         <div className={styles.modalHeader}>
-          <div className={styles.modalToolbar}>
-            <button 
-              onClick={onClose}
-              className={styles.closeButton}
-            >
-              ×
-            </button>
-            <h2 className={styles.modalTitle}>Передача на исполнение</h2>
-            <div className={styles.headerSpacer}></div>
-          </div>
+          <div className={styles.modalTitle}>Исполнение заявки</div>
+          <button onClick={onClose} className={styles.closeButton}>
+            <IonIcon icon={closeOutline} />
+          </button>
         </div>
 
         <div className={styles.modalBody}>
-          <div className={styles.invoiceContainer}>
-            {/* Информация о заявке */}
-            <div className={styles.invoiceInfo}>
-              <div className={styles.infoHeader}>
-                <h3>Заявка #{invoice.number?.trim()}</h3>
-                <div className={`${styles.statusChip} ${styles.statusPrimary}`}>
-                  К исполнению
-                </div>
+          <div className={styles.invoiceInfo}>
+            <div className={styles.infoHeader}>
+              <h3>#{invoice.number?.trim()}</h3>
+              <div className={styles.statusChip}>{invoice.status}</div>
+            </div>
+            <div className={styles.infoGrid}>
+               <div className={styles.infoItem}>
+                 <span className={styles.infoLabel}>Адрес:</span>
+                 <span className={styles.infoValue}>{invoice.address?.address}</span>
+               </div>
+               <div className={styles.infoItem}>
+                 <span className={styles.infoLabel}>Задача:</span>
+                 <span className={styles.infoValue}>{invoice.service || invoice.character || 'Нет описания'}</span>
+               </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className={styles.executionForm}>
+            
+            {/* 1. СТАТУС (Правильные значения) */}
+            <div className={styles.formSection}>
+              <label className={styles.sectionLabel}>
+                <IonIcon icon={statsChartOutline} className={styles.labelIcon}/>
+                Новый статус
+              </label>
+              <div className={styles.statusOptions}>
+                {/* Список только тех статусов, которые нужны */}
+                {(['В работе', 'Выполнена', 'Отложена', 'Отменена'] as WorkStatus[]).map((st) => (
+                  <IonChip
+                    key={st}
+                    outline={status !== st}
+                    color={getStatusColor(st)}
+                    onClick={() => setStatus(st)}
+                  >
+                    <IonIcon icon={getStatusIcon(st)} />
+                    <span style={{marginLeft: 4}}>{st}</span>
+                  </IonChip>
+                ))}
+              </div>
+            </div>
+
+            {/* 2. ИСПОЛНИТЕЛЬ */}
+            <div className={styles.formSection}>
+              <div className={styles.sectionHeader}>
+                <label className={styles.sectionLabel}>
+                  <IonIcon icon={personOutline} className={styles.labelIcon}/>
+                  Исполнитель
+                </label>
+              </div>
+
+              {/* Поиск */}
+              <div className={styles.searchContainer}>
+                 <IonIcon icon={searchOutline} className={styles.searchIcon} />
+                 <input 
+                    type="text" 
+                    className={styles.searchInput} 
+                    placeholder="Поиск сотрудника..." 
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                 />
+              </div>
+
+              {/* Фильтры */}
+              <div className={styles.filtersContainer}>
+                 <button 
+                    type="button"
+                    className={`${styles.filterChip} ${filterWorkload === 'all' && !filterRating ? styles.filterChipActive : ''}`}
+                    onClick={() => { setFilterWorkload('all'); setFilterRating(false); }}
+                 >
+                    Все
+                 </button>
+                 <button 
+                    type="button"
+                    className={`${styles.filterChip} ${filterWorkload === 'low' ? styles.filterChipActive : ''}`}
+                    onClick={() => setFilterWorkload(filterWorkload === 'low' ? 'all' : 'low')}
+                 >
+                    Мало задач
+                 </button>
+                 <button 
+                    type="button"
+                    className={`${styles.filterChip} ${filterRating ? styles.filterChipActive : ''}`}
+                    onClick={() => setFilterRating(!filterRating)}
+                 >
+                    Высокий рейтинг
+                 </button>
               </div>
               
-              <div className={styles.infoGrid}>
-                <div className={styles.infoItem}>
-                  <span className={styles.infoLabel}>Адрес:</span>
-                  <span className={styles.infoValue}>{getFullAddress()}</span>
-                </div>
-                {invoice.plot && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Участок:</span>
-                    <span className={styles.infoValue}>{invoice.plot}</span>
-                  </div>
-                )}
-                {invoice.character && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Характер работ:</span>
-                    <span className={styles.infoValue}>{invoice.character}</span>
-                  </div>
-                )}
-                {invoice.service && (
-                  <div className={styles.infoItem}>
-                    <span className={styles.infoLabel}>Описание:</span>
-                    <span className={styles.infoValue}>{invoice.service}</span>
-                  </div>
+              <div className={styles.executorsList}>
+                {filteredExecutors.length === 0 ? (
+                  <div className={styles.emptyState}>Нет сотрудников по запросу</div>
+                ) : (
+                  filteredExecutors.map((ex) => (
+                    <div
+                      key={ex.id}
+                      className={`${styles.executorCard} ${selectedExecutor?.id === ex.id ? styles.executorSelected : ''} ${!ex.isAvailable ? styles.executorDisabled : ''}`}
+                      onClick={() => setSelectedExecutor(ex)}
+                    >
+                      <div className={styles.executorMain}>
+                        <div className={styles.executorName}>
+                          {ex.name} <span className={styles.executorRole}>{ex.role}</span>
+                        </div>
+                        <div className={styles.executorRating}>
+                          <IonIcon icon={star} /> {ex.rating.toFixed(1)}
+                        </div>
+                      </div>
+                      <div className={styles.executorMeta}>
+                        <div className={`${styles.workloadBadge} ${getWorkloadClass(ex.currentWorkload)}`}>
+                           Загрузка: {getWorkloadText(ex.currentWorkload)}
+                        </div>
+                        <div className={ex.isAvailable ? styles.available : styles.unavailable}>
+                           {ex.isAvailable ? 'Доступен' : 'Занят'}
+                        </div>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
 
-            {/* Форма назначения исполнителя */}
-            <form onSubmit={handleSubmit} className={styles.executionForm}>
-              {/* Выбор статуса */}
-              <div className={styles.formSection}>
-                <label className={styles.sectionLabel}>
-                  <span className={styles.labelIcon}>📊</span>
-                  Статус работы *
-                </label>
-                <div className={styles.statusOptions}>
-                  {(['Принята', 'Передана', 'Выполнена', 'Отложена', 'Отклонена'] as WorkStatus[]).map((statusOption) => (
-                    <IonChip
-                      key={statusOption}
-                      outline={status !== statusOption}
-                      color={status === statusOption ? 'primary' : 'medium'}
-                      onClick={() => setStatus(statusOption)}
-                      style={{ 
-                        margin: '2px',
-                        cursor: 'pointer',
-                        border: status === statusOption ? '2px solid var(--ion-color-primary)' : '1px solid var(--ion-color-medium)'
-                      }}
-                    >
-                      <span className={`${styles.statusIcon } ${getStatusColorClass(statusOption)}`}>
-                        {statusOption === 'Принята' && '🆕'}
-                        {statusOption === 'Передана' && '⚡'}
-                        {statusOption === 'Выполнена' && '✅'}
-                        {statusOption === 'Отложена' && '⏸️'}
-                        {statusOption === 'Отклонена' && '❌'}
-                      </span>
-                      <span className='ml-1'>
-                        { statusOption }
-                      </span>
-                    </IonChip>
-                  ))}
-                </div>
-              </div>
-
-              {/* Выбор исполнителя */}
-              <div className={styles.formSection}>
-                <div className={styles.sectionHeader}>
-                  <label className={styles.sectionLabel}>
-                    <span className={styles.labelIcon}>👤</span>
-                    Выберите исполнителя *
+            {/* 3. ПРИОРИТЕТ */}
+            <div className={styles.formSection}>
+              <label className={styles.sectionLabel}>
+                <IonIcon icon={flagOutline} className={styles.labelIcon}/>
+                Приоритет
+              </label>
+              <div className={styles.priorityOptions}>
+                {['low', 'normal', 'high'].map((p) => (
+                  <label key={p} className={styles.priorityOption}>
+                    <input type="radio" name="priority" value={p} checked={priority === p} onChange={e => setPriority(e.target.value)} />
+                    <div className={`${styles.priorityLabel} ${priority === p ? styles[`p-${p}`] : ''}`}>
+                       {p === 'low' ? 'Низкий' : p === 'normal' ? 'Обычный' : 'Высокий'}
+                    </div>
                   </label>
-                  
-                  {selectedExecutor && !showAllExecutors && (
-                    <button 
-                      type="button"
-                      onClick={handleCancelSelection}
-                      className={styles.cancelSelectionButton}
-                    >
-                      Отменить выбор
-                    </button>
-                  )}
-                </div>
-                
-                {executors.length === 0 ? (
-                  <div className={styles.emptyState}>
-                    <p>Нет доступных исполнителей</p>
-                    <button 
-                      type="button" 
-                      className={styles.refreshButton}
-                      onClick={() => console.log('Обновить список исполнителей')}
-                    >
-                      Обновить список
-                    </button>
-                  </div>
-                ) : (
-                  <div className={styles.executorsList}>
-                    {executorsToShow.map((executor) => (
-                      <div
-                        key={executor.id}
-                        className={`${styles.executorCard} ${
-                          selectedExecutor?.id === executor.id ? styles.executorSelected : ''
-                        } ${!executor.isAvailable ? styles.executorDisabled : ''}`}
-                        onClick={() => handleExecutorClick(executor)}
-                      >
-                        <div className={styles.executorMain}>
-                          <div className={styles.executorName}>
-                            {executor.name}
-                            <span className={styles.executorSpecialty}>
-                              {executor.role}
-                            </span>
-                          </div>
-                          <div className={styles.executorRating}>
-                            ⭐ {executor.rating.toFixed(1)}
-                          </div>
-                        </div>
-                        <div className={styles.executorMeta}>
-                          <div className={`${styles.workloadBadge} ${getWorkloadColor(executor.currentWorkload)}`}>
-                            Загрузка: {getWorkloadText(executor.currentWorkload)}
-                          </div>
-                          <div className={styles.availability}>
-                            {executor.isAvailable ? (
-                              <span className={styles.available}>✓ Доступен</span>
-                            ) : (
-                              <span className={styles.unavailable}>✗ Недоступен</span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {selectedExecutor?.id === executor.id && (
-                          <div className={styles.selectionIndicator}>
-                            ✅ Выбран
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    
-                    {!showAllExecutors && executors.length > 1 && (
-                      <div className={styles.showAllHint}>
-                        <p>Показан только выбранный исполнитель. Нажмите на него еще раз или кнопку "Отменить выбор" чтобы увидеть всех.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                ))}
               </div>
+            </div>
 
-              {/* Приоритет */}
-              <div className={styles.formSection}>
-                <label className={styles.sectionLabel}>
-                  <span className={styles.labelIcon}>🎯</span>
-                  Приоритет выполнения
-                </label>
-                <div className={styles.priorityOptions}>
-                  <label className={styles.priorityOption}>
-                    <input
-                      type="radio"
-                      name="priority"
-                      value="low"
-                      checked={priority === 'low'}
-                      onChange={(e) => setPriority(e.target.value)}
-                    />
-                    <span className={styles.priorityLabel}>
-                      <span className={styles.priorityIcon}>🟢</span>
-                      Низкий
-                    </span>
-                  </label>
-                  <label className={styles.priorityOption}>
-                    <input
-                      type="radio"
-                      name="priority"
-                      value="normal"
-                      checked={priority === 'normal'}
-                      onChange={(e) => setPriority(e.target.value)}
-                    />
-                    <span className={styles.priorityLabel}>
-                      <span className={styles.priorityIcon}>🟡</span>
-                      Обычный
-                    </span>
-                  </label>
-                  <label className={styles.priorityOption}>
-                    <input
-                      type="radio"
-                      name="priority"
-                      value="high"
-                      checked={priority === 'high'}
-                      onChange={(e) => setPriority(e.target.value)}
-                    />
-                    <span className={styles.priorityLabel}>
-                      <span className={styles.priorityIcon}>🔴</span>
-                      Высокий
-                    </span>
-                  </label>
-                </div>
-              </div>
+            {/* 4. КОММЕНТАРИЙ */}
+            <div className={styles.formSection}>
+              <label className={styles.sectionLabel}>
+                <IonIcon icon={chatbubbleOutline} className={styles.labelIcon}/>
+                Комментарий
+              </label>
+              <textarea
+                className={styles.commentTextarea}
+                placeholder="Укажите детали..."
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+              />
+            </div>
 
-              {/* Комментарий */}
-              <div className={styles.formSection}>
-                <label className={styles.sectionLabel}>
-                  <span className={styles.labelIcon}>💬</span>
-                  Комментарий для исполнителя
-                </label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Дополнительные указания, особенности выполнения работ..."
-                  className={styles.commentTextarea}
-                  rows={4}
-                />
-              </div>
+            <div className={styles.formActions}>
+              <button type="button" onClick={onClose} className={styles.cancelButton}>Отмена</button>
+              <button type="submit" className={styles.submitButton} disabled={!selectedExecutor || isSubmitting}>
+                {isSubmitting ? <IonSpinner name="crescent" color="light" style={{width:20}}/> : <IonIcon icon={saveOutline}/>}
+                Сохранить
+              </button>
+            </div>
 
-              {/* Кнопки */}
-              <div className={styles.formActions}>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className={styles.cancelButton}
-                  disabled={isSubmitting}
-                >
-                  Отмена
-                </button>
-                <button
-                  type="submit"
-                  disabled={!selectedExecutor || isSubmitting || executors.length === 0}
-                  className={styles.submitButton}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className={styles.loadingSpinner}></span>
-                      Назначение...
-                    </>
-                  ) : (
-                    'Назначить исполнителя'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+          </form>
         </div>
       </div>
     </div>

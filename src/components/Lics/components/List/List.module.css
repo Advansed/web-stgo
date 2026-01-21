@@ -1,256 +1,189 @@
-/* List.module.css */
-/* ============================================
-   ОСНОВНЫЕ СТИЛИ КОНТЕЙНЕРА
-   ============================================ */
+/* List.module.css - FINAL WHITE & SMART GRID */
 
+/* Главный контейнер */
 .licsContainer {
-  min-height: 100vh;
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  width: 100%;
+  /* Убрали max-width, чтобы на широких экранах занимало всё место */
+  margin: 0;
+  
+  padding: 30px; /* Отступы по краям */
+  padding-bottom: 120px;
+  
+  /* === 1. УБИВАЕМ ФИОЛЕТОВЫЙ ФОН === */
+  min-height: 100vh; 
+  background-color: #f8fafc; /* Светло-серый/Белый фон страницы */
+  /* Если хочешь чисто белый, поставь #ffffff */
 }
 
-.licsTitle {
-  text-align: center;
-  color: white;
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 30px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-  font-size: 16px;
-  color: white;
-}
-
-.empty {
-  text-align: center;
-  padding: 40px;
-  color: white;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-}
-
-/* ============================================
-   КАРТОЧКА ЛИЦЕВОГО СЧЕТА
-   ============================================ */
-
+/* Обертка списка - УМНАЯ СЕТКА */
 .licsList {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 600px;
-  margin: 0 auto;
+  display: grid;
+  
+  /* === 2. УМНЫЙ местоДАВАТЕЛЬ xD === */
+  /* "Вмещай сколько влезает, но каждая карточка не меньше 450px" */
+  /* Это заставит их идти слева направо и переноситься вниз автоматически */
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); 
+  
+  gap: 24px; /* Отступы между карточками */
+  align-items: start;
 }
 
-.licItemCard {
+/* Состояния загрузки */
+.loading, .empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #64748b;
+  padding: 60px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  padding: 24px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid #e1e5e9;
+  border-radius: 20px;
+  border: 1px dashed #cbd5e1;
+  font-weight: 500;
+}
+
+/* === КАРТОЧКА === */
+.licItemCard {
   position: relative;
+  width: 100%;
+  
+  /* Белый фон карточки */
+  background: #ffffff;
+  
+  border-radius: 20px;
+  padding: 24px;
+  
+  border: 1px solid #e2e8f0;
+  
+  /* Красивая тень */
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
   overflow: hidden;
 }
 
-.licItemCard::before {
+/* Эффект наведения */
+.licItemCard:hover {
+  transform: translateY(-4px); 
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border-color: #cbd5e1;
+  z-index: 5;
+}
+
+/* Полоска статуса */
+.licItemCard::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  left: 0; top: 0; bottom: 0;
+  width: 6px;
 }
+.statusPositive::after { background: #ef4444; }
+.statusNone::after     { background: #10b981; }
+.statusNegative::after { background: #3b82f6; }
 
-.licItemCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-}
-
-.licItemCard:active {
-  transform: translateY(0);
-}
-
-/* ============================================
-   ЗАГОЛОВОК КАРТОЧКИ
-   ============================================ */
-
-.licItemHeader {
+/* Иконка */
+.iconBox {
+  width: 54px; 
+  height: 54px;
+  border-radius: 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e2e8f0;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.statusPositive .iconBox { color: #ef4444; background: #fef2f2; }
+.statusNone .iconBox     { color: #10b981; background: #ecfdf5; }
+.statusNegative .iconBox { color: #3b82f6; background: #eff6ff; }
+
+/* Инфо */
+.infoBox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  min-width: 0; 
 }
 
 .licCode {
   font-size: 20px;
-  font-weight: 600;
-  color: #2d3748;
-  line-height: 1.2;
-}
-
-.licActions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* ============================================
-   ИНФОРМАЦИЯ О ДОЛГЕ
-   ============================================ */
-
-.debtContainer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.debtSum {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.2;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: #f7fafc;
-}
-
-.debtNone {
-  color: #28a745;
-  background: #f0fff4;
-}
-
-.debtPositive {
-  color: #dc3545;
-  background: #fff5f5;
-}
-
-.debtNegative {
-  color: #6c757d;
-  background: #f8f9fa;
-}
-
-.debtIndicator {
-  color: #dc3545;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-/* ============================================
-   СОДЕРЖИМОЕ КАРТОЧКИ
-   ============================================ */
-
-.licItemBody {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.licName {
-  font-size: 16px;
-  font-weight: 500;
-  color: #343a40;
-  line-height: 1.3;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
 }
 
 .licAddress {
-  font-size: 14px;
-  color: #6c757d;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.licPlot {
-  font-size: 14px;
-  color: #6c757d;
-  line-height: 1.2;
-}
-
-/* ============================================
-   КНОПКА УДАЛЕНИЯ
-   ============================================ */
-
-.deleteButton {
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  padding: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #dc2626;
-  transition: all 0.3s ease;
+/* Правая часть */
+.actionsBox {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: auto; 
+}
+
+.sumValue {
+  font-size: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.sumLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.textPositive { color: #dc2626; }
+.textNone     { color: #059669; }
+.textNegative { color: #2563eb; }
+
+/* Кнопка удаления */
+.deleteButton {
+  margin-top: 8px;
+  width: 32px; 
   height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-
 .deleteButton:hover {
-  background: #fecaca;
-  border-color: #f87171;
-  transform: scale(1.05);
+  background: #fee2e2;
+  color: #ef4444;
 }
 
-.deleteButton:active {
-  background: #dc2626;
-  color: white;
-  transform: scale(0.95);
-}
-
-/* ============================================
-   АДАПТИВНОСТЬ
-   ============================================ */
-
-@media (max-width: 768px) {
+/* Адаптив (на мобилках все в 1 колонку) */
+@media (max-width: 600px) {
+  .licsList {
+    grid-template-columns: 1fr; /* Одна колонка */
+  }
   .licsContainer {
-    padding: 16px;
-  }
-  
-  .licsTitle {
-    font-size: 24px;
-    margin-bottom: 20px;
-  }
-  
-  .licItemCard {
-    padding: 20px;
-  }
-  
-  .licItemHeader {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-  
-  .licActions {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .licCode {
-    font-size: 18px;
-  }
-}
-
-@media (max-width: 480px) {
-  .licsContainer {
-    padding: 12px;
-  }
-  
-  .licItemCard {
-    padding: 16px;
-  }
-  
-  .licsTitle {
-    font-size: 20px;
+    padding: 15px;
   }
 }

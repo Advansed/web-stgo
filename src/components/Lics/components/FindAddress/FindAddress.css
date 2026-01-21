@@ -1,514 +1,204 @@
-/* ============================================
-   КОРПОРАТИВНЫЙ СТИЛЬ ДЛЯ FINDADDRESS
-   ============================================ */
+/* FindAddress.css */
 
-/* Основные CSS переменные - корпоративная палитра */
-:root {
-  --address-corporate-primary: #1E3A8A;        /* Темно-синий */
-  --address-corporate-secondary: #E5E7EB;      /* Светло-серый */
-  --address-corporate-accent: #F97316;         /* Оранжевый акцент */
-  --address-corporate-white: #FFFFFF;          /* Белый */
-  --address-corporate-text: #1F2937;           /* Темно-серый текст */
-  --address-corporate-blue: #3B82F6;           /* Синий */
+/* Контейнер */
+.address-form-wrapper {
+  background: #f8fafc;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 20px;
   
-  /* Дополнительные корпоративные цвета */
-  --address-corporate-border: #D1D5DB;
-  --address-corporate-shadow: rgba(0, 0, 0, 0.1);
-  --address-corporate-hover: #F3F4F6;
-  --address-corporate-focus: #EBF8FF;
-  --address-corporate-success: #10B981;
-  --address-corporate-warning: #F59E0B;
-  --address-corporate-error: #EF4444;
-  --address-corporate-selected: #F0F9FF;
-  --address-corporate-active: #DBEAFE;
+  /* --- ФИКС ВЫСОТЫ --- */
+  min-height: 500px; /* Чтобы окно не было маленьким */
 }
 
-/* ============================================
-   ОСНОВНОЙ КОНТЕЙНЕР FINDADDRESS
-   ============================================ */
-
-.address-form {
-  width: 100%;
-  height: 80%;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 16px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* --- ШАПКА --- */
+.address-header {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  padding: 16px 20px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+  flex-shrink: 0;
 }
 
-/* ============================================
-   ОСНОВНАЯ КАРТОЧКА FINDADDRESS
-   ============================================ */
+.address-title {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-.address-form ion-card,
-.address-form-card {
-  --background: var(--address-corporate-white) !important;
-  background: var(--address-corporate-white) !important;
-  border: 2px solid var(--address-corporate-border);
+.address-title ion-icon {
+  font-size: 20px;
+  opacity: 0.9;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
+}
+.close-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+/* --- КОНТЕНТ --- */
+.address-content {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  
+  /* --- ФИКС ОБРЕЗКИ ВЫПАДАЮЩЕГО СПИСКА --- */
+  padding-bottom: 250px; /* Место для выпадашки снизу */
+}
+
+/* Описание */
+.info-block {
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
   border-radius: 12px;
-  box-shadow: 0 4px 16px var(--address-corporate-shadow);
-  border-left: 6px solid var(--address-corporate-primary);
-  transition: all 0.3s ease;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.info-icon {
+  color: #3b82f6;
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.info-text {
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+/* --- СТИЛИЗАЦИЯ REACT-DADATA --- */
+.dadata-container {
   position: relative;
+  z-index: 100; /* Поднимаем выше всего */
+}
+
+.react-dadata__input {
   width: 100%;
-  margin: 0 0 24px 0;
-  animation: address-slide-in 0.3s ease-out;
+  height: 50px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 15px;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.address-form ion-card:hover,
-.address-form-card:hover {
-  border-left-color: var(--address-corporate-accent);
-  box-shadow: 0 6px 24px rgba(249, 115, 22, 0.2);
-  transform: translateY(-2px);
+.react-dadata__input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-/* Декоративный элемент в правом верхнем углу */
-.address-form ion-card::before,
-.address-form-card::before {
+.react-dadata__suggestions {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.2); /* Тень посильнее */
+  overflow: hidden;
+  margin-top: 8px;
+  z-index: 9999; /* Чтобы точно было поверх всего */
+}
+
+.react-dadata__suggestion {
+  padding: 12px 16px;
+  font-size: 14px;
+}
+.react-dadata__suggestion:hover { background: #f1f5f9; }
+
+/* --- РЕЗУЛЬТАТ --- */
+.result-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, var(--address-corporate-accent), var(--address-corporate-primary));
-  clip-path: polygon(100% 0%, 0% 0%, 100% 100%);
-  border-radius: 0 12px 0 0;
+  top: 0; left: 0; bottom: 0;
+  width: 6px;
+  background: #10b981;
 }
 
-/* ============================================
-   ЗАГОЛОВКИ КАРТОЧЕК
-   ============================================ */
-
-.address-form ion-card-header,
-.address-form-header {
-  --background: transparent !important;
-  background: transparent !important;
-  padding: 20px 20px 16px 20px;
-  border-bottom: 1px solid var(--address-corporate-border);
-}
-
-.address-form ion-card-title,
-.address-form-title {
-  --color: var(--address-corporate-primary) !important;
-  color: var(--address-corporate-primary) !important;
+.result-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #94a3b8;
   font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.result-value {
   font-size: 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.address-form .description-text {
-  color: #6B7280;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.4;
-  margin: 0;
-}
-
-/* ============================================
-   КОНТЕНТ КАРТОЧЕК
-   ============================================ */
-
-.address-form ion-card-content,
-.address-form-content {
-  --background: transparent !important;
-  background: transparent !important;
-  padding: 20px;
-  height: 100%;
-}
-
-/* ============================================
-   КОНТЕЙНЕР ПОЛЯ ВВОДА С ВЫПАДАЮЩИМ СПИСКОМ
-   ============================================ */
-
-.address-input-container {
-  position: relative;
-  margin-bottom: 16px;
-}
-
-/* ============================================
-   ПОЛЯ ВВОДА И ЭЛЕМЕНТЫ ФОРМЫ
-   ============================================ */
-
-.address-form ion-item,
-.address-form-item {
-  --background: var(--address-corporate-white) !important;
-  background: var(--address-corporate-white) !important;
-  border: 2px solid var(--address-corporate-border) !important;
-  border-radius: 8px !important;
-  margin-bottom: 0 !important;
-  --inner-padding-start: 16px !important;
-  --inner-padding-end: 16px !important;
-  --padding-start: 0 !important;
-  --padding-end: 0 !important;
-  --min-height: 52px !important;
-  transition: all 0.2s ease !important;
-  position: relative;
-}
-
-.address-form ion-item:hover,
-.address-form-item:hover {
-  --border-color: var(--address-corporate-blue) !important;
-  border-color: var(--address-corporate-blue) !important;
-  transform: translateY(-1px);
-}
-
-.address-form ion-item.item-has-focus,
-.address-form-item.item-has-focus {
-  --border-color: var(--address-corporate-blue) !important;
-  border-color: var(--address-corporate-blue) !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-}
-
-.address-form ion-input,
-.address-form-input {
-  --color: var(--address-corporate-text) !important;
-  --placeholder-color: #9CA3AF !important;
-  font-size: 14px !important;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-  font-weight: 500;
-}
-
-/* Иконки в полях */
-.address-form ion-item ion-icon,
-.address-form-item ion-icon {
-  color: var(--address-corporate-primary) !important;
-  font-size: 20px !important;
-  transition: color 0.2s ease;
-}
-
-.address-form ion-item:hover ion-icon,
-.address-form-item:hover ion-icon {
-  color: var(--address-corporate-accent) !important;
-}
-
-/* ============================================
-   ВЫПАДАЮЩИЙ СПИСОК ПРЕДЛОЖЕНИЙ
-   ============================================ */
-
-.suggestions-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: var(--address-corporate-white);
-  border: 2px solid var(--address-corporate-primary);
-  border-radius: 8px;
-  max-height: 240px;
-  overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  animation: suggestions-slide-down 0.2s ease-out;
-}
-
-.suggestion-item {
-  padding: 12px 16px;
-  cursor: pointer;
-  border-bottom: 1px solid #F3F4F6;
-  transition: all 0.15s ease;
-  font-size: 14px;
-  font-weight: 500;
-  user-select: none;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-}
-
-.suggestion-item:last-child {
-  border-bottom: none;
-  border-radius: 0 0 6px 6px;
-}
-
-.suggestion-item:first-child {
-  border-radius: 6px 6px 0 0;
-}
-
-.suggestion-item:hover {
-  background: var(--address-corporate-hover);
-  color: var(--address-corporate-primary);
-  border-left: 4px solid var(--address-corporate-accent);
-  padding-left: 12px;
   font-weight: 600;
+  color: #0f172a;
 }
 
-.suggestion-item:active {
-  background: var(--address-corporate-active);
-}
-
-/* ============================================
-   СТАНДАРТИЗИРОВАННЫЙ АДРЕС
-   ============================================ */
-
-.address-form .standardized-address {
-  background: linear-gradient(135deg, #F0FDF4, #ECFDF5);
-  border: 2px solid var(--address-corporate-success);
-  border-radius: 12px;
+/* --- ФУТЕР --- */
+.address-footer {
   padding: 20px;
-  margin: 16px 0;
-  position: relative;
-  animation: standardized-appear 0.5s ease-out;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto; /* Прижимает футер к низу */
 }
 
-.address-form .standardized-address::before {
-  content: '✓';
-  position: absolute;
-  top: -8px;
-  right: 16px;
-  background: var(--address-corporate-success);
+.save-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
   color: white;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.address-form .standardized-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--address-corporate-success);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.address-form .standardized-text {
-  font-size: 15px;
-  color: #166534;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 1.4;
-}
-
-/* ============================================
-   КНОПКИ
-   ============================================ */
-
-.address-buttons {
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.address-form ion-button,
-.address-form-button {
-  --background: var(--address-corporate-blue) !important;
-  --color: var(--address-corporate-white) !important;
-  --border-radius: 8px !important;
-  --padding-start: 24px !important;
-  --padding-end: 24px !important;
-  --padding-top: 12px !important;
-  --padding-bottom: 12px !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  transition: all 0.3s ease !important;
-  height: 48px !important;
-  margin: 0 !important;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-}
-
-.address-form ion-button:hover,
-.address-form-button:hover {
-  --background: var(--address-corporate-accent) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4) !important;
-}
-
-.address-form ion-button:active,
-.address-form-button:active {
-  transform: translateY(0) !important;
-}
-
-/* Кнопка outline стиля */
-.address-form ion-button[fill="outline"] {
-  --background: var(--address-corporate-white) !important;
-  --color: var(--address-corporate-primary) !important;
-  --border-color: var(--address-corporate-primary) !important;
-  --border-width: 2px !important;
-  border: 2px solid var(--address-corporate-primary) !important;
-  background: var(--address-corporate-white) !important;
-}
-
-.address-form ion-button[fill="outline"]:hover {
-  --background: var(--address-corporate-primary) !important;
-  --color: var(--address-corporate-white) !important;
-  background: var(--address-corporate-primary) !important;
-  box-shadow: 0 4px 16px rgba(30, 58, 138, 0.4) !important;
-}
-
-/* Отключенные кнопки */
-.address-form ion-button[disabled] {
-  opacity: 0.6 !important;
-  transform: none !important;
-  cursor: not-allowed !important;
-}
-
-/* ============================================
-   СПИННЕРЫ И ЗАГРУЗКА
-   ============================================ */
-
-.address-form ion-spinner,
-.address-form-spinner {
-  --color: var(--address-corporate-blue) !important;
-  color: var(--address-corporate-blue) !important;
-  width: 20px !important;
-  height: 20px !important;
-  margin-right: 8px !important;
-}
-
-/* Контейнер загрузки */
-.address-form .loading-container {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  text-align: center;
+  gap: 10px;
+  transition: opacity 0.2s;
+  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.2);
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--address-corporate-secondary);
-  border-top: 3px solid var(--address-corporate-primary);
-  border-radius: 50%;
-  animation: address-spin 1s linear infinite;
-  margin-bottom: 12px;
-}
-
-.loading-text {
-  color: var(--address-corporate-text);
-  font-size: 14px;
-  font-weight: 500;
-  animation: loading-pulse 1.5s ease-in-out infinite;
-}
-
-/* ============================================
-   КАСТОМНЫЕ СКРОЛЛБАРЫ
-   ============================================ */
-
-.suggestions-dropdown::-webkit-scrollbar {
-  width: 8px;
-}
-
-.suggestions-dropdown::-webkit-scrollbar-track {
-  background: var(--address-corporate-secondary);
-  border-radius: 4px;
-  margin: 8px 0;
-}
-
-.suggestions-dropdown::-webkit-scrollbar-thumb {
-  background: var(--address-corporate-primary);
-  border-radius: 4px;
-  transition: background 0.3s ease;
-}
-
-.suggestions-dropdown::-webkit-scrollbar-thumb:hover {
-  background: var(--address-corporate-accent);
-}
-
-/* ============================================
-   АНИМАЦИИ
-   ============================================ */
-
-@keyframes address-slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes address-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes loading-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-@keyframes standardized-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes suggestions-slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* ============================================
-   АДАПТИВНОСТЬ
-   ============================================ */
-
-@media (max-width: 768px) {
-  .address-form {
-    padding: 12px;
-  }
-  
-  .address-form ion-card-content,
-  .address-form-content {
-    padding: 16px;
-  }
-  
-  .address-form ion-card-header,
-  .address-form-header {
-    padding: 16px 16px 12px 16px;
-  }
-  
-  .address-form ion-button,
-  .address-form-button {
-    height: 44px !important;
-    --padding-start: 20px !important;
-    --padding-end: 20px !important;
-    font-size: 13px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .address-form ion-card,
-  .address-form-card {
-    border-radius: 8px;
-    margin-bottom: 16px;
-  }
-  
-  .suggestions-dropdown {
-    max-height: 200px;
-  }
-  
-  .suggestion-item {
-    padding: 10px 12px;
-    min-height: 44px;
-    font-size: 13px;
-  }
-}
+.save-btn:hover { opacity: 0.9; }
+.save-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }

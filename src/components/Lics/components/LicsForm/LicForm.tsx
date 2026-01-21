@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import {
   IonModal,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButtons,
-  IonButton,
   IonIcon,
   IonLoading
 } from '@ionic/react';
-import { closeOutline, chevronDown, chevronUp } from 'ionicons/icons';
+import { 
+  closeOutline, 
+  chevronDown, 
+  walletOutline, 
+  speedometerOutline, 
+  documentTextOutline, 
+  flameOutline,
+  homeOutline,
+  personOutline,
+  locationOutline
+} from 'ionicons/icons';
 import './LicForm.css';
-import { formatDate, formatSum, getDebtStatus, getTotalDebt } from '../../useLics';
+// ДОБАВИЛ formatAddress В ИМПОРТЫ
+import { formatDate, formatSum, getDebtStatus, getTotalDebt, formatAddress } from '../../useLics';
 
 interface LicFormProps {
   isOpen: boolean;
@@ -21,27 +26,34 @@ interface LicFormProps {
   loading?: boolean;
 }
 
-interface AccordionSectionProps {
+// Компонент Аккордеона
+const AccordionSection: React.FC<{
   title: string;
+  subtitle?: string;
+  icon: string;
+  colorClass: string; 
   isOpen: boolean;
   onToggle: () => void;
   children: React.ReactNode;
-  className?: string;
-}
-
-const AccordionSection: React.FC<AccordionSectionProps> = ({
-  title,
-  isOpen,
-  onToggle,
-  children,
-  className = ''
-}) => (
-  <div className={`accordion-section ${className}`}>
+}> = ({ title, subtitle, icon, colorClass, isOpen, onToggle, children }) => (
+  <div className={`accordion-section ${isOpen ? 'is-open' : ''}`}>
     <button className="accordion-header" onClick={onToggle}>
-      <span className="accordion-title">{title}</span>
-      <IonIcon icon={isOpen ? chevronUp : chevronDown} className="accordion-icon" />
+      <div className="header-left">
+        <div className={`section-icon-box ${colorClass}`}>
+          <IonIcon icon={icon} />
+        </div>
+        
+        <div className="header-text-row">
+          <div className="section-title">{title}</div>
+          {subtitle && (
+             <div className="status-badge">{subtitle}</div>
+          )}
+        </div>
+      </div>
+      
+      <IonIcon icon={chevronDown} className="accordion-arrow" />
     </button>
-    <div className={`accordion-content ${isOpen ? 'open' : 'closed'}`}>
+    <div className={`accordion-content ${isOpen ? 'open' : ''}`}>
       {children}
     </div>
   </div>
@@ -54,7 +66,7 @@ const LicForm: React.FC<LicFormProps> = ({
   loading = false
 }) => {
   const [openSections, setOpenSections] = useState({
-    debts: false,
+    debts: true, 
     counters: false,
     agrees: false,
     equips: false
@@ -69,176 +81,190 @@ const LicForm: React.FC<LicFormProps> = ({
 
   if (!licAccount) return null;
 
-  const totalDebt = getTotalDebt(licAccount.debts);
-  const debtStatus = getDebtStatus(licAccount.debts);
+  const debts = licAccount.debts || [];
+  const counters = licAccount.counters || [];
+  const agrees = licAccount.agrees || [];
+  const equips = licAccount.equips || [];
+
+  const totalDebt = getTotalDebt(debts);
 
   return (
     <>
       <IonLoading isOpen={loading} />
+      
       <IonModal 
         isOpen={isOpen} 
         onDidDismiss={onClose}
         className="lics-form-modal"
       >
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Лицевой счет</IonTitle>
-            <IonButtons slot="end">
-              <IonButton 
-                fill="clear" 
-                onClick={onClose}
-                className="close-button"
-              >
-                <IonIcon icon={closeOutline} />
-              </IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
+        {/* --- ШАПКА --- */}
+        <div className="lic-modal-header">
+          <div className="lic-modal-title">
+            <IonIcon icon={homeOutline} />
+            Карточка абонента
+          </div>
+          <button onClick={onClose} className="close-btn">
+            <IonIcon icon={closeOutline} />
+          </button>
+        </div>
 
-        <IonContent>
-          <div className="lic-form-card">
-            {/* Основная информация - всегда видна */}
-            <div className="lic-main-info">
-              <h2 className="lic-main-title">Основная информация</h2>
-              <div className="lic-info-grid">
-                <div className="lic-info-field">
-                  <label>Код лицевого счета:</label>
-                  <span className="lic-info-value">{licAccount.code}</span>
-                </div>
-                <div className="lic-info-field">
-                  <label>Абонент:</label>
-                  <span className="lic-info-value">{licAccount.name}</span>
-                </div>
-                <div className="lic-info-field">
-                  <label>Участок:</label>
-                  <span className="lic-info-value">{licAccount.plot}</span>
-                </div>
-                <div className="lic-info-field">
-                  <label>Адрес:</label>
-                  <span className="lic-info-value">{licAccount.address_go}</span>
+        {/* --- КОНТЕНТ --- */}
+        <div className="lic-content">
+          
+          {/* Главный блок */}
+          <div className="lic-hero">
+            <div className="hero-top">
+              <div>
+                <div className="hero-code">{licAccount.code}</div>
+                <div className="hero-subtitle">
+                  <IonIcon icon={locationOutline} />
+                  {licAccount.plot ? `Участок: ${licAccount.plot}` : 'Участок не указан'}
                 </div>
               </div>
+              <div className="account-badge">Активен</div>
             </div>
 
-            {/* Складные секции */}
-            <div className="accordion-container">
-
-              {/* Задолженность */}
-              <AccordionSection
-                title="Задолженность"
-                isOpen={openSections.debts}
-                onToggle={() => toggleSection('debts')}
-                className={`debt-section debt-${debtStatus}`}
-              >
-                <div className="lic-info-field debt-total">
-                  <label>Общая задолженность:</label>
-                  <span className={`lic-info-value debt-${debtStatus}`}>
-                    {formatSum(totalDebt)}
-                  </span>
-                </div>
-                {licAccount.debts.length > 0 && (
-                  <div className="debts-list">
-                    {licAccount.debts.map((debt:any, index: number) => (
-                      <div key={index} className="debt-item">
-                        <span className="debt-service fs-08">{debt.label}</span>
-                        <span className={`debt-sum debt-${debt.sum > 0 ? 'positive' : debt.sum < 0 ? 'negative' : 'zero'}`}>
-                          {formatSum(debt.sum)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </AccordionSection>
-
-              {/* Приборы учета */}
-              <AccordionSection
-                title="Приборы учета"
-                isOpen={openSections.counters}
-                onToggle={() => toggleSection('counters')}
-              >
-                {licAccount.counters?.length > 0 ? (
-                  <div className="counters-list">
-                    {licAccount.counters.map((counter:any, index:number) => (
-                      <div key={index} className="counter-item">
-                        <div className="counter-header">
-                          <span className="counter-code fs-08">{counter.code}</span>
-                          <span className="counter-type fs-08">{counter.tip}</span>
-                        </div>
-                        <div className="counter-name fs-08">{counter.name}</div>
-                        <div className="counter-data">
-                          <span>Пломба: {counter.seal || ''}</span>
-                          <span>Дата пломбы: {formatDate(counter.seal_date || '')}</span>
-                          <span>Показания: {counter.indice }</span>
-                          <span>Дата показаний: {formatDate( counter.period )}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-section">Приборы учета не найдены</div>
-                )}
-              </AccordionSection>
-
-              {/* Договор */}
-              <AccordionSection
-                title="Договор"
-                isOpen={openSections.agrees}
-                onToggle={() => toggleSection('agrees')}
-              >
-                {licAccount.agrees?.length > 0 ? (
-                  <div className="agrees-list">
-                    {licAccount.agrees.map((agree:any, index:number) => (
-                      <div key={index} className="agree-item">
-                        <div className="agree-header">
-                          <span className="agree-name">{agree.name}</span>
-                          <span className={`agree-status ${agree.status.toLowerCase()}`}>
-                            {agree.status}
-                          </span>
-                        </div>
-                        <div className="agree-details">
-                          <div>Номер: {agree.number}</div>
-                          <div>Дата: {formatDate(agree.begin_date )}</div>
-                          {agree.end_date && <div>Дата окончания: {formatDate(agree.end_date)}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-section">Договоры не найдены</div>
-                )}
-              </AccordionSection>
-
-              {/* Газовое оборудование */}
-              <AccordionSection
-                title="Газовое оборудование"
-                isOpen={openSections.equips}
-                onToggle={() => toggleSection('equips')}
-              >
-                {licAccount.equips?.length > 0 ? (
-                  <div className="equips-list">
-                    {licAccount.equips.map((equip:any, index:number) => (
-                      <div key={index} className="equip-item">
-                        <div className="equip-header">
-                          <span className="equip-type">{equip.tip}</span>
-                          <span className={`equip-status ${equip.active === 'true' ? 'active' : 'inactive'}`}>
-                            {equip.active === 'true' ? 'Активно' : 'Неактивно'}
-                          </span>
-                        </div>
-                        <div className="equip-details">
-                          <div className="equip-name">{equip.name}</div>
-                          <div className="equip-number">№ {equip.number}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-section">Газовое оборудование не найдено</div>
-                )}
-              </AccordionSection>
-
+            <div className="hero-details">
+               <div className="detail-row">
+                 <IonIcon icon={personOutline} className="detail-icon" />
+                 <div className="detail-text">
+                    <strong>Абонент</strong>
+                    {licAccount.name}
+                 </div>
+               </div>
+               <div className="detail-row">
+                 <IonIcon icon={locationOutline} className="detail-icon" />
+                 <div className="detail-text">
+                    <strong>Адрес</strong>
+                    {/* ВОТ ЗДЕСЬ ИСПРАВИЛ: теперь выводит address через форматтер */}
+                    {licAccount.address ? formatAddress(licAccount.address) : 'Адрес не указан'}
+                 </div>
+               </div>
             </div>
           </div>
-        </IonContent>
+
+          {/* Список секций */}
+          <div className="accordion-container">
+
+            {/* 1. ЗАДОЛЖЕННОСТЬ */}
+            <AccordionSection
+              title="Задолженность"
+              subtitle={totalDebt > 0 ? `Долг: ${formatSum(totalDebt)}` : 'Нет задолженности'}
+              icon={walletOutline}
+              colorClass="bg-red"
+              isOpen={openSections.debts}
+              onToggle={() => toggleSection('debts')}
+            >
+              <div className={`debt-card ${totalDebt > 0 ? 'debt-total' : 'debt-ok'}`}>
+                <span>Итого к оплате:</span>
+                <span>{formatSum(totalDebt)}</span>
+              </div>
+              
+              {debts.length > 0 ? (
+                <div style={{marginTop: 10}}>
+                  {debts.map((debt: any, index: number) => (
+                    <div key={index} className="debt-row">
+                      <span className="text-label">{debt.label}</span>
+                      <span className="text-value" style={{color: debt.sum > 0 ? '#ef4444' : '#10b981'}}>
+                        {formatSum(debt.sum)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">Начислений не найдено</div>
+              )}
+            </AccordionSection>
+
+            {/* 2. ПРИБОРЫ УЧЕТА */}
+            <AccordionSection
+              title="Приборы учета"
+              subtitle={`${counters.length} счетчиков`}
+              icon={speedometerOutline}
+              colorClass="bg-blue"
+              isOpen={openSections.counters}
+              onToggle={() => toggleSection('counters')}
+            >
+              {counters.length > 0 ? counters.map((counter: any, index: number) => (
+                <div key={index} className="counter-card">
+                  <div className="counter-header">
+                    <span className="counter-name">{counter.name}</span>
+                    <span className="counter-badge">{counter.tip}</span>
+                  </div>
+                  <div className="counter-value">{counter.indice}</div>
+                  <div className="counter-date">
+                    Дата показаний: {formatDate(counter.period)}
+                  </div>
+                  <div className="card-row" style={{marginTop: 4, fontSize: 12}}>
+                    <span className="text-label">Пломба:</span>
+                    <span className="text-value">{counter.seal || 'Нет'} ({formatDate(counter.seal_date)})</span>
+                  </div>
+                </div>
+              )) : (
+                <div className="empty-state">Приборы учета отсутствуют</div>
+              )}
+            </AccordionSection>
+
+            {/* 3. ДОГОВОРЫ */}
+            <AccordionSection
+              title="Договоры"
+              subtitle={agrees.length > 0 ? 'Есть активные договоры' : 'Нет договоров'}
+              icon={documentTextOutline}
+              colorClass="bg-green"
+              isOpen={openSections.agrees}
+              onToggle={() => toggleSection('agrees')}
+            >
+               {agrees.length > 0 ? agrees.map((agree: any, index: number) => (
+                 <div key={index} className="simple-card">
+                    <div className="card-row">
+                       <span className="text-value" style={{fontWeight: 600}}>{agree.name}</span>
+                       <span className={agree.status?.toLowerCase().includes('действ') ? 'status-active' : 'text-label'}>
+                          {agree.status}
+                       </span>
+                    </div>
+                    <div className="card-row">
+                       <span className="text-label">Номер:</span>
+                       <span>{agree.number}</span>
+                    </div>
+                    <div className="card-row">
+                       <span className="text-label">Дата:</span>
+                       <span>{formatDate(agree.begin_date)}</span>
+                    </div>
+                 </div>
+               )) : <div className="empty-state">Договоры не найдены</div>}
+            </AccordionSection>
+
+            {/* 4. ГАЗОВОЕ ОБОРУДОВАНИЕ */}
+            <AccordionSection
+              title="Оборудование"
+              subtitle={`${equips.length} ед.`}
+              icon={flameOutline}
+              colorClass="bg-orange"
+              isOpen={openSections.equips}
+              onToggle={() => toggleSection('equips')}
+            >
+              {equips.length > 0 ? equips.map((equip: any, index: number) => (
+                 <div key={index} className="simple-card">
+                    <div className="card-row">
+                       <span className="text-value">{equip.name}</span>
+                       <span className={equip.active === 'true' ? 'status-active' : 'status-inactive'}>
+                          {equip.active === 'true' ? 'Активно' : 'Неактивно'}
+                       </span>
+                    </div>
+                    <div className="card-row">
+                       <span className="text-label">Тип:</span>
+                       <span>{equip.tip}</span>
+                    </div>
+                    <div className="card-row">
+                       <span className="text-label">Инв. номер:</span>
+                       <span style={{fontFamily: 'monospace'}}>{equip.number}</span>
+                    </div>
+                 </div>
+               )) : <div className="empty-state">Оборудование не найдено</div>}
+            </AccordionSection>
+
+          </div>
+        </div>
       </IonModal>
     </>
   );

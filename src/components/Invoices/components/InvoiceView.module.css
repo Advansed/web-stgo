@@ -1,413 +1,279 @@
-/* InvoiceModal.module.css */
+/* InvoiceView.module.css - MODERN STYLE */
+
+/* --- МОДАЛЬНОЕ ОКНО --- */
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+  z-index: 11000;
+  padding: 16px;
 }
 
 .modalContent {
   width: 100%;
-  max-width: 500px;
-  max-height: 85vh; /* Изменено с 90vh на 85vh */
-  background: #f7fafc;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 550px;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  animation: slideInUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* --- ШАПКА --- */
 .modalHeader {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 0;
-  flex-shrink: 0; /* Запрещаем сжатие заголовка */
-}
-
-.modalToolbar {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  padding: 16px 20px;
+  color: white;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: transparent;
-  color: white;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
 }
 
 .modalTitle {
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin: 0;
-  flex: 1;
 }
 
+.headerButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.iconBtn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
+}
+
+.iconBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* --- ТЕЛО --- */
 .modalBody {
-  background: #f7fafc;
-  max-height: calc(85vh - 64px); /* Соответственно изменено вычисление */
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.invoiceContainer {
-  background: #f7fafc;
-  min-height: 0; /* Важно для правильного скролла */
   flex: 1;
+  overflow-y: auto;
+  background: #f8fafc;
+  padding: 0;
   display: flex;
   flex-direction: column;
 }
 
-/* Остальные стили остаются без изменений */
-.invoiceHeader {
-  padding: 20px 20px 16px;
+/* --- БЛОК НОМЕРА --- */
+.heroSection {
   background: white;
+  padding: 24px 20px;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
-  flex-shrink: 0; /* Запрещаем сжатие заголовка */
 }
 
-.invoiceTitle {
-  flex: 1;
+.heroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.invoiceTitle h2 {
-  margin: 0 0 4px 0;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #2d3748;
-  line-height: 1.2;
+.heroNumber {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
-.invoiceSubtitle {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #718096;
+.heroDate {
+  font-size: 13px;
+  color: #64748b;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* Статус */
-.statusChip {
-  border-radius: 20px;
-  height: 32px;
-  font-size: 0.75rem;
-  font-weight: 600;
+/* СТАТУСЫ */
+.statusBadge {
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 12px;
-  margin: 0;
-  flex-shrink: 0;
-  color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.statusIcon {
-  font-size: 14px;
-}
+.statusNew { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+.statusWork { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+.statusDone { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.statusFail { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
 
-/* Список информации */
-.invoiceList {
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  flex: 1; /* Занимает доступное пространство */
-  min-height: 0; /* Важно для скролла */
-  overflow-y: auto; /* Добавляем скролл внутри списка если нужно */
-}
-
-.invoiceItem {
+/* --- СПИСОК ДЕТАЛЕЙ --- */
+.detailsList {
   display: flex;
-  align-items: flex-start;
-  padding: 16px 20px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  transition: background-color 0.2s ease;
+  flex-direction: column;
+  padding: 12px;
   gap: 12px;
 }
 
-.invoiceItem:hover {
-  background: #f8fafc;
+.detailCard {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
 
-.invoiceItem:last-child {
-  border-bottom: none;
-}
-
-/* Иконки */
-.itemIcon {
-  color: #4299e1;
-  font-size: 18px;
-  background: #ebf8ff;
-  padding: 6px;
-  border-radius: 8px;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+/* Красивые иконки */
+.iconBox {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
-/* Контент элементов */
-.itemContent {
+.bgBlue { background: #eff6ff; color: #3b82f6; }
+.bgRed { background: #fef2f2; color: #ef4444; }
+.bgGreen { background: #f0fdf4; color: #10b981; }
+.bgOrange { background: #fff7ed; color: #f97316; }
+.bgPurple { background: #faf5ff; color: #8b5cf6; }
+.bgDark { background: #f1f5f9; color: #475569; }
+
+.contentData {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   min-width: 0;
 }
 
-.itemHeader {
-  margin: 0 0 4px 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #718096;
+.label {
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 4px;
 }
 
-.itemText {
-  margin: 0;
-  font-size: 0.95rem;
+.value {
+  font-size: 15px;
   font-weight: 500;
-  color: #2d3748;
+  color: #0f172a;
   line-height: 1.4;
   word-wrap: break-word;
 }
 
-.itemSubtext {
-  margin: 6px 0 0 0;
-  font-size: 0.8rem;
-  color: #718096;
-  font-weight: 400;
+.subValue {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
 }
 
-/* Кнопки в элементах */
-.actionButton {
-  border-radius: 8px;
-  padding: 8px;
-  height: 36px;
-  width: 36px;
-  margin: 0;
-  background: #ebf8ff;
-  color: #4299e1;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease;
-}
-
-.actionButton:hover {
-  background: #bee3f8;
-}
-
-.actionButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.callButton {
-  border-radius: 8px;
-  padding: 0 12px;
-  height: 36px;
-  margin: 0;
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-}
-
-.callButton:hover {
-  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
-}
-
-/* Секции */
-.infoSection {
-  margin-bottom: 8px;
-}
-
-.infoSection:last-child {
-  margin-bottom: 0;
-}
-
-/* Бейджи */
-.infoBadge {
-  background: #edf2f7;
-  color: #4a5568;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-left: 6px;
-}
-
-/* Футер с кнопкой актов */
-.footerActions {
-  padding: 20px;
-  background: white;
-  border-top: 1px solid #e2e8f0;
-  margin-top: 8px;
-  flex-shrink: 0; /* Запрещаем сжатие футера */
-}
-
-.actsButton {
-  border-radius: 10px;
-  padding: 14px;
-  height: 48px;
-  width: 100%;
-  font-size: 0.95rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-  color: white;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.actsButton:hover {
-  background: linear-gradient(135deg, #3182ce 0%, #2c5aa0 100%);
-}
-
-/* Адаптивность */
-@media (max-width: 480px) {
-  .modalOverlay {
-    padding: 10px;
-  }
-  
-  .modalContent {
-    max-height: 90vh; /* На мобильных можно оставить побольше */
-  }
-  
-  .modalBody {
-    max-height: calc(90vh - 64px);
-  }
-  
-  .invoiceHeader {
-    padding: 16px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  .invoiceTitle h2 {
-    font-size: 1.3rem;
-  }
-  
-  .invoiceItem {
-    padding: 14px 16px;
-  }
-  
-  .itemIcon {
-    margin-right: 10px;
-    font-size: 16px;
-    padding: 5px;
-  }
-  
-  .footerActions {
-    padding: 16px;
-  }
-}
-
-@media (max-width: 380px) {
-  .invoiceHeader {
-    padding: 14px;
-  }
-  
-  .invoiceTitle h2 {
-    font-size: 1.2rem;
-  }
-  
-  .invoiceItem {
-    padding: 12px 14px;
-  }
-  
-  .itemText {
-    font-size: 0.9rem;
-  }
-}
-
-/* Анимации */
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Цветовые варианты для статусов */
-.statusSuccess {
-  background: #48bb78;
-}
-
-.statusWarning {
-  background: #ed8936;
-}
-
-.statusDanger {
-  background: #f56565;
-}
-
-.statusPrimary {
-  background: #4299e1;
-}
-
-.statusMedium {
-  background: #a0aec0;
-}
-
-/* Стили для кнопок в заголовке модального окна */
-.closeButton,
-.printButton {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 1.2rem;
-  transition: all 0.2s ease;
-  position: relative;
+/* Кнопки внутри карточек */
+.actionSlot {
+  align-self: center;
   flex-shrink: 0;
 }
 
-.closeButton:hover,
-.printButton:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
+.miniBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 18px;
 }
 
-.closeButton:active,
-.printButton:active {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(0);
+.miniBtn:hover {
+  background: #f8fafc;
+  color: #3b82f6;
+  border-color: #cbd5e1;
 }
+
+.callBtn {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+}
+
+.callBtn:active { transform: scale(0.95); }
+
+/* --- ФУТЕР --- */
+.modalFooter {
+  padding: 16px 20px;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+}
+
+.mainBtn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 10px rgba(30, 58, 138, 0.2);
+  transition: opacity 0.2s;
+}
+
+.mainBtn:hover { opacity: 0.9; }

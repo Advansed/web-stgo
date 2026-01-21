@@ -1,270 +1,120 @@
-/* InvoiceItem.module.css - Контрастный темный стиль */
+/* InvoiceItem.module.css */
 
-.invoiceCard1 {
-  background: #0f3460 !important;
+.invoiceCard {
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  
+  background: #ffffff !important;
   border-radius: 12px !important;
-  border: 1px solid #1a5a9a !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
-  margin: 12px 16px !important;
-  transition: all 0.3s ease !important;
-  backdrop-filter: blur(10px);
-}
-.invoiceCard2 {
-  background: #3a3a3a !important;
-  border-radius: 12px !important;
-  border: 1px solid #1a5a9a !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
-  margin: 12px 16px !important;
-  transition: all 0.3s ease !important;
-  backdrop-filter: blur(10px);
+  padding: 16px !important;
+  
+  /* ВОТ ЭТО ДЕЛАЕТ КАРТОЧКУ ЦЕЛЬНОЙ (РАМКА) */
+  border: 1px solid #cbd5e1 !important; 
+  
+  /* А ЭТО ЦВЕТНАЯ ПОЛОСКА СЛЕВА */
+  border-left-width: 5px !important;
+  border-left-style: solid !important;
+  
+  /* Тень */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  
+  cursor: pointer;
+  transition: all 0.2s ease !important;
+  position: relative;
+  overflow: hidden;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  
+  box-sizing: border-box !important;
 }
 
 .invoiceCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
-  border-color: #4299e1 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+  border-color: #94a3b8 !important; /* Рамка темнеет */
+  z-index: 5;
 }
 
-.cardContentWrapper {
-  padding: 16px;
+.cardSelected {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
 }
 
-/* Заголовок */
 .cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #2d3748;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  width: 100%;
 }
 
 .headerLeft {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.invoiceNumber {
-  color: #e1e5e9 !important;
-  font-size: 1.2em !important;
-  font-weight: 600 !important;
-  margin: 0 0 4px 0 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+.number {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
 }
 
-.invoiceDate {
-  color: #a0aec0 !important;
-  font-size: 0.875rem !important;
-  margin: 0 !important;
+.date {
+  font-size: 11px !important;
+  color: #64748b !important;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
 }
 
 .statusBadge {
-  margin-left: 12px !important;
-  font-weight: 500 !important;
-  background-color: #cbd5e0;
+  font-size: 10px !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
-/* Основной контент */
-.cardContent {
-  margin-bottom: 16px;
-}
-
-.infoSection {
-  margin-bottom: 12px;
-}
-
-.infoLabel {
-  display: flex;
-  align-items: center;
-  color: #cbd5e0 !important;
-  font-size: 0.875rem !important;
-  font-weight: 500 !important;
-  margin-bottom: 4px;
-}
-
-.labelIcon {
-  margin-right: 8px !important;
-  color: #4299e1 !important;
-  font-size: 16px;
-}
-
-.infoValue {
-  color: #e2e8f0 !important;
-  font-size: 0.95rem !important;
-  margin: 0 !important;
-  line-height: 1.4;
-}
-
-.addressValue {
-  font-size: 0.9em;
+.address {
+  font-size: 13px !important;
+  color: #334155 !important;
+  line-height: 1.4 !important;
   font-weight: 500;
-  color: #ffffff !important;
-}
-
-/* Строка с датами */
-.datesRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.datesRow .infoSection {
-  margin-bottom: 0;
-}
-
-.datesRow .infoValue {
-  font-size: 0.875rem !important;
-}
-
-/* Дополнительная информация */
-.additionalInfo {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #2d3748;
-}
-
-.additionalInfo .infoSection {
-  margin-bottom: 8px;
-}
-
-/* Футер */
-.cardFooter {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 16px;
-  border-top: 1px solid #2d3748;
-}
-
-.accountInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.accountItem {
-  color: #a0aec0 !important;
-  font-size: 0.8rem !important;
-}
-
-.plotInfo {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.plotBadge {
-  background: #4299e1;
-  color: white !important;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem !important;
-  font-weight: 500;
-}
-
-.actionButtons {
-  display: flex;
-  gap: 8px;
-}
-
-.actionButton {
-  --background: #4299e1 !important;
-  --background-hover: #3182ce !important;
-  --background-activated: #2c5aa0 !important;
-  --color: white !important;
-  --border-color: #4299e1 !important;
-  --border-radius: 8px !important;
-  font-weight: 500 !important;
-}
-
-.callButton {
-  --background: #48bb78 !important;
-  --background-hover: #38a169 !important;
-  --background-activated: #2f855a !important;
-  --border-color: #48bb78 !important;
-}
-
-/* Состояния карточки */
-.invoiceCard[data-status="success"] {
-  border-left: 4px solid #48bb78 !important;
-}
-
-.invoiceCard[data-status="warning"] {
-  border-left: 4px solid #ed8936 !important;
-}
-
-.invoiceCard[data-status="danger"] {
-  border-left: 4px solid #f56565 !important;
-}
-
-.invoiceCard[data-status="primary"] {
-  border-left: 4px solid #4299e1 !important;
-}
-
-.invoiceCard[data-status="medium"] {
-  border-left: 4px solid #a0aec0 !important;
-}
-
-/* Адаптивность */
-@media (max-width: 480px) {
-  .invoiceCard {
-    margin: 8px 12px !important;
-  }
+  align-items: flex-start;
+  margin-top: 4px;
   
-  .cardFooter {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  
-  .actionButtons {
-    justify-content: space-between;
-  }
-  
-  .datesRow {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* Общие стили для всех статусов */
-.status {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  border: 1px solid transparent;
+.addressText {
+  margin-left: 0;
 }
 
-/* Конкретные статусы */
-.statusNew {
-  background-color: #e3f2fd;
-  color: #1565c0;
-  border-color: #bbdefb;
-}
+/* Цвета статусов */
+.statusNew { border-left-color: #3b82f6 !important; }
+.statusNew .statusBadge { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 
-.statusInProgress {
-  background-color: #fff8e1;
-  color: #ff8f00;
-  border-color: #ffecb3;
-}
+.statusInProgress { border-left-color: #f59e0b !important; }
+.statusInProgress .statusBadge { background: #fffbeb; color: #b45309; border-color: #fde68a; }
 
-.statusCompleted {
-  background-color: #e8f5e8;
-  color: #2e7d32;
-  border-color: #c8e6c9;
-}
+.statusCompleted { border-left-color: #10b981 !important; }
+.statusCompleted .statusBadge { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
 
-.statusOnHold {
-  background-color: #fff3e0;
-  color: #ef6c00;
-  border-color: #ffe0b2;
-}
+.statusOnHold { border-left-color: #8b5cf6 !important; }
+.statusOnHold .statusBadge { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
 
-.statusRejected {
-  background-color: #ffebee;
-  color: #c62828;
-  border-color: #ffcdd2;
-}
+.statusRejected { border-left-color: #ef4444 !important; }
+.statusRejected .statusBadge { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
