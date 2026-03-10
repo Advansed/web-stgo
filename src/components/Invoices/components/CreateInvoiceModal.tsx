@@ -239,20 +239,19 @@ export default function CreateInvoiceModal({ isOpen, onClose, workers, onCreated
       id,
       applicant,
       phone,
-      address: { address },
+      address: address,
       lat: 0,
       lon: 0,
-      lic: { id: lic.id, code: lic.code, name: applicant },
+      lic: lic.code,
       service: [serviceText.trim()],
       status,
       plan_date: new Date().toISOString(),
-      worker: workerObj
-        ? { id: workerObj.id, name: workerObj.name || '', role: workerObj.role || '' }
-        : { id: '', name: '', role: '' }
+      executor: workerObj.id || ''
     };
 
     setLoading(true);
     try {
+      console.log('set_invoice', payload);
       const res = await post('set_invoice', payload);
 
       if (res?.success) {

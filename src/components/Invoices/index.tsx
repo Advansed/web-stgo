@@ -51,7 +51,6 @@ const Invoices: React.FC = () => {
     // Очистка при входе
     setItem(null);
     setView(false);
-    refreshData(update);
 
     // Очистка при ВЫХОДЕ (чтобы данные не лезли в Lics)
     return () => {
@@ -67,6 +66,11 @@ const Invoices: React.FC = () => {
       }
     }
   }, [item]);
+
+  useEffect(() => {
+    console.log("refresh data", update)
+    refreshData(update);
+  }, [update]);
 
   const filteredInvoices = useMemo(() => {
     const jarr = invoices.filter((inv: any) => {
@@ -117,19 +121,11 @@ const Invoices: React.FC = () => {
     setSearchText('');
 
     // 2) сразу обновить
-    setUpdate((u) => {
-      const next = u + 1;
-      refreshData(next);
-      return next;
-    });
+    refreshData( update );
 
     // 3) ещё раз через 1 сек (бэк иногда добавляет не мгновенно)
     setTimeout(() => {
-      setUpdate((u) => {
-        const next = u + 1;
-        refreshData(next);
-        return next;
-      });
+      refreshData( update );
     }, 1000);
   };
 

@@ -35,12 +35,13 @@ export const useHook = () => {
   const refreshData = useCallback(async ( upd: number ) => {
     // Логируем, чтобы видеть, что происходит
     // console.log('HOOK REFRESH:', { current: update, incoming: upd });
-
+    console.log("refresh", update, upd)
     // ЗАЩИТА ОТ ЦИКЛА: Добавил проверки и зависимости
     if( update < upd ) {
       setLoading(true);
       try {
         const res = await post("invoices", { token });
+        console.log("invoices", res)
         
         if (res.success) {
           // === ГЛАВНЫЙ ФИКС: НОРМАЛИЗАЦИЯ ДАННЫХ ===
