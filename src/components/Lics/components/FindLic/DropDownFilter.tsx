@@ -34,7 +34,6 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
         setHighlightedIndex(-1);
         
         if (onSelect) {
-            console.log("option", option)
             onSelect(option);
         }
     }, [onSelect]);

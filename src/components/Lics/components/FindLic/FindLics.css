@@ -72,6 +72,201 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* --- ТАБЫ --- */
+.find-lics-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--lics-border);
+  flex-shrink: 0;
+}
+
+.find-lics-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--lics-border);
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.find-lics-tab ion-icon {
+  font-size: 18px;
+}
+
+.find-lics-tab.active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.find-lics-tab:hover:not(.active) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* --- ПОИСК ПО КОДУ --- */
+.find-by-code-box {
+  margin-top: 0;
+}
+
+.find-by-code-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.5px;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.find-by-code-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.find-by-code-input:disabled {
+  opacity: 0.6;
+  background: #f1f5f9;
+}
+
+.find-by-code-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 22px;
+  transition: transform 0.15s, opacity 0.2s;
+}
+
+.find-by-code-btn:hover:not(:disabled) {
+  transform: scale(1.04);
+}
+
+.find-by-code-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.find-by-code-btn ion-spinner {
+  width: 22px;
+  height: 22px;
+  --color: #fff;
+}
+
+.find-by-code-submit {
+  margin-top: 12px;
+}
+
+.find-by-code-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- НАЙДЕННЫЙ ЛС + КНОПКА ДОБАВИТЬ --- */
+.found-lic-card {
+  margin-top: 16px;
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.08);
+  animation: slideUp 0.3s ease-out;
+}
+
+.found-lic-code {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.5px;
+  color: #1e3a8a;
+  margin-bottom: 10px;
+}
+
+.found-lic-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.found-lic-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.found-lic-row ion-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 16px;
+  color: #3b82f6;
+}
+
+.add-lic-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+.add-lic-action-btn ion-icon {
+  font-size: 20px;
+}
+
+.add-lic-action-btn ion-spinner {
+  width: 22px;
+  height: 22px;
+  --color: #fff;
+}
+
+.add-lic-action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.add-lic-action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 /* --- КОНТЕНТ --- */
 .find-lics-content {
   background: #f8fafc;

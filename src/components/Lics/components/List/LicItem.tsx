@@ -1,7 +1,7 @@
 // LicItem.tsx
 import React from 'react';
 import styles from './List.module.css';
-import { formatAddress } from '../../useLics';
+import { formatAddress } from '../../../../utils/format';
 import { IonIcon } from '@ionic/react';
 import { 
   home, 

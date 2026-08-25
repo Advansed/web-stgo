@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styles from './List.module.css';
 import LicItem, { LicAccount } from './LicItem';
 
@@ -21,26 +21,21 @@ const LicsList: React.FC<LicsListProps> = ({
   getTotalDebt,
   getDebtStatus
 }) => {
+  const sortedData = useMemo(
+    () => [...data].sort((a, b) => a.code.localeCompare(b.code)),
+    [data]
+  );
+
   if (loading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
 
-  // === 3. ИСПРАВЛЕНИЕ ПОРЯДКА (Сортировка) ===
-  // Сортируем данные, чтобы список не прыгал.
-  // Например, по коду (возрастание): 100... -> 200... -> 300...
-  // Если хочешь строго "Новые внизу", и сервер отдает "Новые сверху",
-  // то используй: const sortedData = [...data].reverse();
-  
-  // Я рекомендую сортировку по коду - это самое привычное для глаз:
-  const sortedData = [...data].sort((a, b) => a.code.localeCompare(b.code));
-
   return (
     <div className={styles.licsContainer}>
-      
       <div className={styles.licsList}>
         {sortedData.map((lic) => (
           <LicItem
-              key           = { lic.id } // Важно: используем уникальный ID
+              key           = { lic.code }
               lic           = { lic }
               onLicClick    = { onLicClick }
               onLicDel      = { onLicDel }

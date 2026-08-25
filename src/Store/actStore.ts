@@ -159,15 +159,11 @@ export const useActsStore = create<ActsStore>()(
     
     reset:       (type: number) => {
       switch( type ) {
-        
-        case 0: set({ actComplete: initActCompleteData })
-        
-        case 1: set({ actHouseInspect: initialActHouseInspect })
-
-        case 2: set({ actPlomb: initialActPlomb })
-
+        case 0: set({ actComplete: { ...initActCompleteData } }); break;
+        case 1: set({ actHouseInspect: { ...initialActHouseInspect } }); break;
+        case 2: set({ actPlomb: { ...initialActPlomb } }); break;
+        default: break;
       }
-      
     }
 
   }), { name: 'acts-store' })

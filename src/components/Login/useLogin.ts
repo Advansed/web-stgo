@@ -1,7 +1,7 @@
 // hooks/useLogin.ts
 import { useCallback, useEffect, useState }          from 'react';
 import { useAuth, useLoading, useToken, useUser }        from '../../Store/loginStore';
-import { post } from '../../Store/api';
+import { login } from '../../Store/api';
 import { useToast } from '../Toast';
 
 
@@ -33,9 +33,7 @@ export const useLogin = () => {
     setLoading( true )
     
     try {
-      const res = await post("login", data )
-      
-      console.log( res )  
+      const res = await login(data)
 
       if( res.success ){
 
@@ -44,7 +42,6 @@ export const useLogin = () => {
         setAuth( true )
 
         if(rememberMe){
-          console.log('member')
           localStorage.setItem("mi.login", data.login )
           localStorage.setItem("mi.password", data.password )
         }
@@ -66,7 +63,6 @@ export const useLogin = () => {
 
 
   const handleMemberMe              = useCallback( (data: boolean) => {
-      console.log("member", data)
       if(!data){
         localStorage.removeItem("mi.login")  
         localStorage.removeItem("mi.password")  

@@ -24,10 +24,16 @@ export const useLoginStore = create<any>()(
     {
       name: 'ads-auth-storage',
       partialize: (state) => ({ 
-        user:             state.user,
-        token:            state.token,
-        isAuthenticated:  state.isAuthenticated
-      })
+        user:  state.user,
+        token: state.token,
+        auth:  state.auth,
+      }),
+      // Если есть token после F5 — считаем сессию живой
+      onRehydrateStorage: () => (state) => {
+        if (state?.token && !state.auth) {
+          state.auth = true;
+        }
+      },
     }
   )
 );

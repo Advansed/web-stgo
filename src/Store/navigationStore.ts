@@ -1,6 +1,5 @@
 // src/Store/navigationStore.ts
 
-import React from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
@@ -17,7 +16,7 @@ export interface WorkerData {
 
 export const useNavigationStore = create<any>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
 
         currentRoute:         { route: '/invoices', page: 0 },
         history:              [{ route: '/invoices', page: 0 }],
@@ -26,22 +25,19 @@ export const useNavigationStore = create<any>()(
         update:               1,
         workers:              [],
 
-        setCurrentRoute:      (route) => {set((state) => ({
+        setCurrentRoute:      (route) => set((state) => ({
             currentRoute: route,
             history: [...state.history, route]
-        })); console.log( get().history, route)},
+        })),
 
         back: () => set((state) => {
-            console.log('back')
             if (state.history.length > 1) {
-                console.log( state.history )
                 const newHistory = state.history.slice(0, -1);
                 return {
                 history: newHistory,
                 currentRoute: newHistory[newHistory.length - 1]
                 };
             }
-            // если истории нет, оставляем как есть
             return state;
         }),
 

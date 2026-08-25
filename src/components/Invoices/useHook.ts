@@ -1,192 +1,129 @@
 import { useCallback } from 'react';
-import { useInvoices } from '../../Store/invoiceStore'; // Проверь путь
-import { useToken, useLoading } from '../../Store/loginStore';
+import { useInvoices, useInvoicesStore } from '../../Store/invoiceStore';
+import { useToken } from '../../Store/loginStore';
 import { useToast } from '../Toast';
-import { post } from '../../Store/api';
-import { useItem, useNavigationStore } from '../../Store/navigationStore';
-
-// Функция для приведения данных от 1С к нормальному виду
-const normalizeInvoice = (inv: any) => {
-    return {
-        ...inv,
-        // Если есть id - берем его, иначе Ссылка
-        id: inv.id || inv.Ссылка,
-        // Если есть address - берем его, иначе Адрес. Если ничего нет - пустой объект
-        address: inv.address || inv.Адрес || { address: '', lat: 0, lon: 0 },
-        // Остальные поля для совместимости
-        status: inv.status || inv.Статус,
-        number: inv.number || inv.Номер,
-        date: inv.date || inv.Дата,
-        applicant: inv.applicant || inv.Контрагент,
-        phone: inv.phone || inv.Телефон,
-        // Сохраняем и оригинальные русские поля на всякий случай
-        Адрес: inv.address || inv.Адрес, 
-        Статус: inv.status || inv.Статус
-    };
-};
+import { setInvAddress, setInvWorker, setInvLic } from '../../Store/api';
+import { formatInvoiceDate } from '../../utils/format';
 
 export const useHook = () => {
-  const { data: invoices, setData, update, setUpdate } = useInvoices();
-  const { item, setItem } = useItem();
+  const { data: invoices, loading, setData, loadInvoices } = useInvoices();
   const { token } = useToken();
   const toast = useToast();
-  const { loading, setLoading } = useLoading();
 
-  const refreshData = useCallback(async ( upd: number ) => {
-    // Логируем, чтобы видеть, что происходит
-    // console.log('HOOK REFRESH:', { current: update, incoming: upd });
-    console.log("refresh", update, upd)
-    // ЗАЩИТА ОТ ЦИКЛА: Добавил проверки и зависимости
-    if( update < upd ) {
-      setLoading(true);
-      try {
-        const res = await post("invoices", { token });
-        console.log("invoices", res)
-        
-        if (res.success) {
-          // === ГЛАВНЫЙ ФИКС: НОРМАЛИЗАЦИЯ ДАННЫХ ===
-          // Превращаем русские поля 1С в английские для UI
-          const cleanData = res.data.map(normalizeInvoice);
-          
-          setData(cleanData);
-          setUpdate(upd);
-          // toast.success("Данные обновлены"); 
-        } else {
-          toast.error(res.message);
-        }
-      } catch (err) {
-        toast.error('Ошибка сети при получении заявок');
-      } finally {
-        setLoading(false);
-      }
+  const refreshData = useCallback(async (_upd?: number) => {
+    if (!token) return;
+    const res = await loadInvoices(token, true);
+    if (res && !(res.success || res.error === false) && res.message) {
+      toast.error(res.message);
     }
-  }, [update, token, setData, setUpdate, setLoading, toast]); // <--- ВАЖНО: ЗАВИСИМОСТИ ДОБАВЛЕНЫ
+  }, [token, loadInvoices, toast]);
 
   const get_inv_status = useCallback((invoice: any): any => {
-    // Смотрим и на английское, и на русское поле
     const s = invoice.status || invoice.Статус;
-    
-    if(s === "Новый") return { text: 'Новый', color: 'tertiary' };
-    if(s === "В работе") return { text: 'В работе', color: 'primary' };
-      
+    if (s === 'Новый') return { text: 'Новый', color: 'tertiary' };
+    if (s === 'В работе') return { text: 'В работе', color: 'primary' };
     return { text: s || 'Обычная', color: 'success' };
   }, []);
 
-  const format_date = useCallback((dateString: string): string => {
-        if (!dateString || typeof dateString !== 'string') return '';
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            
-            const now = new Date();
-            const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 0) {
-                return 'Сегодня, ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            } else if (diffDays === 1) {
-                return 'Вчера, ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            } else {
-                return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            }
-        } catch (err) {
-            return dateString;
-        }
-  }, []);
+  const format_date = useCallback((dateString: string) => formatInvoiceDate(dateString), []);
 
   const format_phone = useCallback((phone: string): string => {
-        if (!phone || typeof phone !== 'string') return '';
-        const digits = phone.replace(/\D/g, '');
-        if (digits.length === 11 && digits.startsWith('7')) {
-            return `+7 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9)}`;
-        } 
-        return phone;
+    if (!phone || typeof phone !== 'string') return '';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 11 && digits.startsWith('7')) {
+      return `+7 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9)}`;
+    }
+    return phone;
   }, []);
 
-  const uppdate_address = useCallback(async( id: string, address: any) => {
-      // console.log("UPDATING ADDR:", id, address);
-      
-      // Поддержка и объекта, и строки
-      const addrVal = typeof address === 'string' ? address : (address.address || address.value);
-      const lat = address.lat || 0;
-      const lon = address.lon || 0;
+  const uppdate_address = useCallback(async (id: string, address: any) => {
+    const addrVal = typeof address === 'string' ? address : (address.address || address.value);
+    const lat = address.lat || 0;
+    const lon = address.lon || 0;
 
-      const res = await post("set_inv_address", { token, id: id, address: addrVal, lat, lon });
-      
-      if(res.success){
-        // === ФИКС ОТОБРАЖЕНИЯ ===
-        // Обновляем И 'address' (для UI), И 'Адрес' (для 1С совместимости)
-        const jarr = invoices.map( (inv: any) =>
-              (inv.id === id || inv.Ссылка === id) 
-                ? { 
-                    ...inv, 
-                    address: addrVal,      // Чтобы UI увидел сразу
-                    Адрес: addrVal,        // Чтобы логика 1С не сломалась
-                    lat: lat,
-                    lon: lon
-                  }
-                : inv
-        );
-        setData( jarr );
-        toast.success("Адрес сохранен");
-      } else {
-        toast.error("Ошибка обновления адреса");
-      }
-      return res;
-  }, [ token, invoices, setData, toast ]);
+    const res = await setInvAddress(token!, id, addrVal, lat, lon);
 
-  const upd_worker = useCallback(async( id: string, worker: any ) => {
-    const res = await post( "set_inv_worker", { token, id, worker: worker.worker.id, status: worker.status });
-    if(res.success){
-      let jarr = invoices.map( ( inv: any ) =>
-            (inv.id === id || inv.Ссылка === id)
-              ? { 
-                  ...inv, 
-                  worker: worker.worker, // UI
-                  Работник: worker.worker, // 1C
-                  status: worker.status, // UI
-                  Статус: worker.status // 1C
-                }
-              : inv
+    if (res.success) {
+      const jarr = invoices.map((inv: any) =>
+        (inv.id === id || inv.Ссылка === id)
+          ? { ...inv, address: addrVal, Адрес: addrVal, lat, lon }
+          : inv
       );
-      setData( jarr );
-
+      setData(jarr);
+      toast.success('Адрес сохранен');
     } else {
-      toast.error("Ошибка назначения");
+      toast.error('Ошибка обновления адреса');
     }
     return res;
-  }, [ token, invoices, setData, toast ]);
+  }, [token, invoices, setData, toast]);
 
-  const upd_lic = useCallback(async( id: string, lic: any ) => {
-    const res = await post( "set_inv_lic", { token, id, lic: lic.id });
-    console.log("upd_lic", res)
-    if(res.success){
-      let jarr = invoices.map( ( inv: any ) =>
-            (inv.id === id || inv.Ссылка === id)
-              ? { 
-                  ...inv, 
-                  lic: lic
-                }
-              : inv
+  const upd_worker = useCallback(async (id: string, payload: any) => {
+    const body: any = {
+      token,
+      id,
+      status: payload.status,
+    };
+    const workerId = payload.worker?.id;
+    if (payload.worker === null) {
+      body.worker = '';
+    } else if (workerId) {
+      body.worker = workerId;
+    }
+    if (payload.comment != null && payload.comment !== '') {
+      body.comment = payload.comment;
+    }
+
+    const res = await setInvWorker(body);
+    if (res.success) {
+      const jarr = invoices.map((inv: any) =>
+        (inv.id === id || inv.Ссылка === id)
+          ? {
+              ...inv,
+              ...(payload.worker === null
+                ? { worker: null, Работник: null }
+                : payload.worker
+                  ? { worker: payload.worker, Работник: payload.worker }
+                  : {}),
+              status: payload.status,
+              Статус: payload.status,
+              ...(payload.comment != null
+                ? { comment: payload.comment, Комментарий: payload.comment }
+                : {}),
+            }
+          : inv
       );
-      setData( jarr );
-      setItem({ ...item, lic: lic });
-
+      setData(jarr);
+      toast.success('Сохранено');
     } else {
-      toast.error("Ошибка назначения");
+      toast.error('Ошибка сохранения');
     }
     return res;
-  }, [ token, invoices, setData, toast ]);
+  }, [token, invoices, setData, toast]);
 
-return {
-    update,
+  const upd_lic = useCallback(async (id: string, lic: any) => {
+    const res = await setInvLic(token!, id, lic.id);
+    if (res.success) {
+      const jarr = invoices.map((inv: any) =>
+        (inv.id === id || inv.Ссылка === id) ? { ...inv, lic } : inv
+      );
+      setData(jarr);
+      useInvoicesStore.getState().updateItem({ id, lic });
+    } else {
+      toast.error('Ошибка назначения');
+    }
+    return res;
+  }, [token, invoices, setData, toast]);
+
+  return {
     loading,
     invoices,
     refreshData,
+    loadInvoices,
     get_inv_status,
     format_date,
     uppdate_address,
     upd_worker,
     upd_lic,
-    format_phone
+    format_phone,
   };
 };

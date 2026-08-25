@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { post } from './api'; 
+import { getLic, getLics, isApiOk, addLic as apiAddLic, delLic as apiDelLic } from './api'; 
+
+let loadLicsInFlight: Promise<any> | null = null;
+let loadLicsInFlightToken: string | null = null;
 
 interface LicsState {
   data:         any;
@@ -14,6 +17,7 @@ interface LicsState {
   loadLics:     ( token: string) => Promise<any>;
   addLic:       ( token: string, lc: string, id: string) => Promise<any>;
   delLic:       ( token: string, lc: string) => Promise<any>;
+  getLicByCode: ( token: string, code: string) => Promise<any>;
 }
 
 export const useLicsStore = create<LicsState>()(
@@ -27,47 +31,67 @@ export const useLicsStore = create<LicsState>()(
       setItem:      (item) => set({ item }),
       setLoading:   (loading) => set({ loading }),
 
-      // 1. ПОЛУЧЕНИЕ
       loadLics:     async (token) => {
-        set({ loading: true }); 
-        try {
-            console.log("🔄 [LICS] Загрузка списка...");
-            const res = await post('get_lics', { token });
-            
-            // Проверяем и success: true, и error: false
-            const isSuccess = res.success === true || res.error === false;
-
-            if (isSuccess) {
-              const list = res.data || [];
-              console.log("✅ [LICS] Список получен:", list.length);
-              set({ data: list });
-            } else {
-              console.warn("⚠️ [LICS] Нет данных или ошибка:", res);
-              set({ data: [] });
-            }
-            
-            set({ loading: false });
-            return res;
-        } catch (err:any) {
-          console.error("❌ [LICS] Ошибка сети:", err);
-          set({ loading: false });
-          return {success: false, message: "Ошибка сети"}
+        if (loadLicsInFlight && loadLicsInFlightToken === token) {
+          return loadLicsInFlight;
         }
+
+        loadLicsInFlightToken = token;
+        loadLicsInFlight = (async () => {
+          set({ loading: true }); 
+          try {
+              const res = await getLics(token);
+
+              if (res.ok) {
+                const list = res.data || [];
+                const uniqueList = list.filter(
+                  (item: { code: string }, index: number, arr: { code: string }[]) =>
+                    arr.findIndex((x) => x.code === item.code) === index
+                );
+                set({ data: uniqueList, loading: false });
+              } else {
+                console.warn('[LICS] Нет данных или ошибка:', res);
+                set({ data: [], loading: false });
+              }
+              
+              return res;
+          } catch (err:any) {
+            console.error('[LICS] Ошибка сети:', err);
+            set({ loading: false });
+            return {success: false, message: "Ошибка сети"}
+          } finally {
+            loadLicsInFlight = null;
+            loadLicsInFlightToken = null;
+          }
+        })();
+
+        return loadLicsInFlight;
       },
 
-      // 2. ДОБАВЛЕНИЕ (С ЗАДЕРЖКОЙ)
       addLic: async (token, lc, id) => {
         try {
-            console.log("➕ [ADD] Отправка:", { lc, id });
-            const res = await post('add_lic', { token, lc, id });
-            console.log("➕ [ADD] Ответ:", res);
+            const res = await apiAddLic(token, lc, id);
 
-            if (res.success || res.error === false) {
-                // === ВАЖНО: ЖДЕМ 1 СЕКУНДУ, ПОКА БАЗА СОХРАНИТ ===
-                console.log("⏳ Ждем БД...");
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Теперь обновляем
+            if (isApiOk(res) || res.success) {
+                await get().loadLics(token);
+                const found = get().data?.some((x: any) => String(x.code) === String(lc));
+                if (!found) {
+                  await new Promise((r) => setTimeout(r, 400));
+                  await get().loadLics(token);
+                }
+            }
+            return res;
+        } catch (e) {
+            console.error(e);
+            return { success: false, message: 'Ошибка сети' };
+        }
+      },
+
+      delLic: async (token, lc) => {
+        try {
+            const res = await apiDelLic(token, lc);
+            
+            if (isApiOk(res) || res.success) {
                 await get().loadLics(token);
             }
             return res;
@@ -77,31 +101,18 @@ export const useLicsStore = create<LicsState>()(
         }
       },
 
-      // 3. УДАЛЕНИЕ (ТОЖЕ С ЗАДЕРЖКОЙ)
-      delLic: async (token, lc) => {
-        try {
-            const res = await post('del_lic', { token, lc });
-            
-            if (res.success || res.error === false) {
-                // Ждем 500мс
-                await new Promise(resolve => setTimeout(resolve, 500));
-                await get().loadLics(token);
-            }
-            return res;
-        } catch (e) {
-            console.error(e);
-            return { success: false, message: 'Ошибка сети' };
-        }
-      }
+      getLicByCode: async (token, code) => getLic(token, code),
     }),
     { name: 'lics-store' }
   )
 );
 
 export const useLicsActions = () => {
-    const { addLic, delLic, loadLics } = useLicsStore.getState();
-    return { addLic, delLic, loadLics };
+    const { addLic, delLic, loadLics, getLicByCode } = useLicsStore.getState();
+    return { addLic, delLic, loadLics, getLicByCode };
 };
 
 export const useData = () => useLicsStore(s => s.data);
-export const useLoading = () => useLicsStore(s => s.loading);
+export const useLicsLoading = () => useLicsStore(s => s.loading);
+/** @deprecated конфликт с loginStore.useLoading */
+export const useLoading = useLicsLoading;

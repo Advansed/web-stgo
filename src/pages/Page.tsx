@@ -1,5 +1,5 @@
 // Page.tsx
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   IonContent,
   IonHeader,
@@ -27,17 +27,17 @@ import Invoices from '../components/Invoices';
 import Home from './Home';
 
 // Сторы
-import { useAdd, useRoutes, useUpdate } from '../Store/navigationStore';
-import { useUser } from '../Store/loginStore';
+import { useAdd } from '../Store/navigationStore';
+import { useUser, useToken } from '../Store/loginStore';
+import { useInvoicesStore } from '../Store/invoiceStore';
 
 const Page: React.FC = () => {
   const { name } = useParams<{ name: string }>();
   const history = useHistory();
 
   const { user } = useUser();
-  const { currentRoute } = useRoutes();
+  const { token } = useToken();
   const { setAdd } = useAdd();
-  const { update, setUpdate } = useUpdate();
 
   const isInvoices = name === 'invoices';
   const isHome = name === 'home';
@@ -50,10 +50,9 @@ const Page: React.FC = () => {
     return (names[0][0] + names[1][0]).toUpperCase();
   };
 
-  // Рендер контента
-  const PageContent = () => {
+  const renderPageContent = () => {
     switch (name) {
-      case 'lics': return <Lics page={currentRoute.page} />;
+      case 'lics': return <Lics />;
       case 'invoices': return <Invoices />;
       case 'home': return <Home />;
       case 'settings': return <Home />;
@@ -83,7 +82,7 @@ const Page: React.FC = () => {
 
       case 'invoices':
         return (
-          <div className="action-icon" onClick={() => setUpdate(update + 1)} title="Обновить данные">
+          <div className="action-icon" onClick={() => token && useInvoicesStore.getState().loadInvoices(token, true)} title="Обновить данные">
              <IonIcon icon={refreshOutline} />
           </div>
         );
@@ -160,10 +159,10 @@ const Page: React.FC = () => {
       >
         {isInvoices ? (
           <div className="invoices-content-inner">
-            <PageContent />
+            {renderPageContent()}
           </div>
         ) : (
-          <PageContent />
+          renderPageContent()
         )}
       </IonContent>
     </IonPage>

@@ -46,8 +46,8 @@ export interface InvoiceViewProps {
     invoiceStatus: InvoiceStatus;
     formatDate: (dateString: string) => string;
     formatPhone: (phone: string) => string;
-    onNavigateToActs: () => void;
     onNavigateToPrint: () => void;
+    onSaveInvoice?: (data: { status: string; comment: string; worker?: any }) => Promise<void>;
     onUpdateAddress?: (invoiceId: string, newAddress: string) => Promise<AddressUpdateResult>; // НОВЫЙ PROP
 }
 

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '../../Toast';
 import { useLoginStore, useToken } from '../../../Store/loginStore';
-import { post } from '../../../Store/api';
+import { getCompletedAct, createCompletedAct } from '../../../Store/api';
 import { actsActions, useActsStore } from '../../../Store/actStore';
 import { ActCompletedData } from '../../../Store/types';
 
@@ -14,7 +14,7 @@ export const useCompleted = (actId?: string) => {
   const actComplete                     = useActsStore(state => state.actComplete);
   const loading                         = useActsStore(state => state.loading);
   const user                            = useLoginStore(state => state.user);
-  const token                           = useToken();
+  const { token } = useToken();
   
   const [fieldErrors, setFieldErrors]   = useState(initialFieldErrors);
   const toast                           = useToast();
@@ -48,10 +48,7 @@ export const useCompleted = (actId?: string) => {
   const loadActByInvoice                = useCallback(async (invoiceId: string) => {
     actsActions.setLoading(true);
     try {
-      const result = await post('COMPLETED_GET', { 
-        invoice_id: invoiceId, 
-        user_id: user.id 
-      });
+      const result = await getCompletedAct(invoiceId, user.id);
       
       if (result.success) {
         actsActions.setData(0, result.data);
@@ -69,7 +66,7 @@ export const useCompleted = (actId?: string) => {
     
     actsActions.setLoading(true);
     try {
-      const result = await post('COMPLETED_CREATE', { token, ...actComplete });
+      const result = await createCompletedAct(token, actComplete);
       if (result.success) {
         actsActions.setData(0, result.data);
         toast.success('Акт выполненных работ сохранен');

@@ -8,17 +8,18 @@ import {
 import { filterOutline, addOutline } from 'ionicons/icons';
 
 import { useHook } from './useHook';
-import { useItem, useUpdate, useWorkers } from '../../Store/navigationStore';
+import { useWorkers } from '../../Store/navigationStore';
 
 import InvoiceItem from './components/InvoiceList/InvoiceItem';
 import InvWorker from './components/InvoiceList/InvWorker';
 import Maps from '../Maps/Maps';
 import { InvoiceView } from './components/InvoiceView';
-import { InvExecute } from './components/InvExecute';
 
 import CreateInvoiceModal from './components/CreateInvoiceModal';
 
 import styles from './components/InvoiceList/InvoiceList.module.css';
+
+type ModalMode = 'none' | 'view' | 'create';
 
 const Invoices: React.FC = () => {
   const {
@@ -33,55 +34,29 @@ const Invoices: React.FC = () => {
     get_inv_status
   } = useHook();
 
-  const { update, setUpdate } = useUpdate();
-  const { item, setItem } = useItem();
   const { workers } = useWorkers();
 
   const [searchText, setSearchText] = useState('');
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<any>(null);
+  const [mode, setMode] = useState<ModalMode>('none');
 
-  const [view, setView] = useState(false);
-  const [exec, setExec] = useState(false);
-
-  // модалка создания
-  const [createOpen, setCreateOpen] = useState(false);
-
-  // === ГЛАВНЫЙ ФИКС ===
   useEffect(() => {
-    // Очистка при входе
-    setItem(null);
-    setView(false);
-
-    // Очистка при ВЫХОДЕ (чтобы данные не лезли в Lics)
+    refreshData();
     return () => {
-      setItem(null);
+      setSelected(null);
+      setMode('none');
     };
-  }, []); // только при монтировании/размонтировании
-
-  // Следим за item
-  useEffect(() => {
-    if (item && !view && !exec) {
-      if (item.number) {
-        setView(true);
-      }
-    }
-  }, [item]);
-
-  useEffect(() => {
-    console.log("refresh data", update)
-    refreshData(update);
-  }, [update]);
+  }, []);
 
   const filteredInvoices = useMemo(() => {
-    const jarr = invoices.filter((inv: any) => {
-      const search = searchText.toLowerCase();
+    const search = searchText.toLowerCase();
+    return invoices.filter((inv: any) => {
       return (
-        inv.number.toLowerCase().includes(search) ||
-        (inv.applicant).toLowerCase().includes(search)
+        String(inv.number || '').toLowerCase().includes(search) ||
+        String(inv.applicant || '').toLowerCase().includes(search)
       );
     });
-
-    return jarr;
   }, [invoices, searchText]);
 
   const sortedWorkers = useMemo(() => {
@@ -93,40 +68,71 @@ const Invoices: React.FC = () => {
   }, [workers]);
 
   const handleSelectInvoice = (invoice: any) => {
-    setItem(invoice);
+    setSelected(invoice);
+    setMode('view');
+  };
+
+  const closeModals = () => {
+    setMode('none');
+    setSelected(null);
   };
 
   const handleUpdateAddress = async (id: string, address: any) => {
     await uppdate_address(id, address);
-    setUpdate(update + 1);
+    if (selected?.id === id) {
+      setSelected((prev: any) => prev ? { ...prev, address, Адрес: address } : prev);
+    }
   };
 
-  const handleUpdateWorker = async (worker: any) => {
-    if (item) {
-      await upd_worker(item.id, worker);
-      setUpdate(update + 1);
-    }
+  const handleAssignWorker = async (worker: any | null) => {
+    if (!selected) return;
+    const st = worker ? 'В работе' : 'Новый';
+    await upd_worker(selected.id, { worker, status: st });
+    setSelected((prev: any) =>
+      prev
+        ? {
+            ...prev,
+            worker: worker || null,
+            Работник: worker || null,
+            status: st,
+            Статус: st,
+          }
+        : prev
+    );
+  };
+
+  const handleSaveInvoice = async (data: { status: string; comment: string; worker?: any }) => {
+    if (!selected) return;
+    await upd_worker(selected.id, {
+      worker: data.worker || selected.worker,
+      status: data.status,
+      comment: data.comment,
+    });
+    setSelected((prev: any) =>
+      prev
+        ? {
+            ...prev,
+            worker: data.worker || prev.worker,
+            Работник: data.worker || prev.Работник,
+            status: data.status,
+            Статус: data.status,
+            comment: data.comment,
+            Комментарий: data.comment,
+          }
+        : prev
+    );
   };
 
   const handleUpdateLic = async (lic: any) => {
-    if (item) {
-      await upd_lic(item.id, lic);
-      setUpdate(update + 1);
+    if (selected) {
+      await upd_lic(selected.id, lic);
+      setSelected((prev: any) => prev ? { ...prev, lic } : prev);
     }
   };
 
-  // ====== ВОТ ЭТО ГЛАВНОЕ, ЧТО ДЕЛАЕТ “ПОЯВЛЯЕТСЯ СЛЕВА” ======
-  const forceRefreshInvoices = () => {
-    // 1) сбросить поиск, чтобы новый элемент не скрывался фильтром
+  const forceRefreshInvoices = async () => {
     setSearchText('');
-
-    // 2) сразу обновить
-    refreshData( update );
-
-    // 3) ещё раз через 1 сек (бэк иногда добавляет не мгновенно)
-    setTimeout(() => {
-      refreshData( update );
-    }, 1000);
+    await refreshData();
   };
 
   return (
@@ -140,17 +146,15 @@ const Invoices: React.FC = () => {
             </h2>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {/* + */}
               <IonButton
                 fill="solid"
                 size="small"
-                onClick={() => setCreateOpen(true)}
+                onClick={() => setMode('create')}
                 aria-label="Создать заявку"
               >
                 <IonIcon slot="icon-only" icon={addOutline} />
               </IonButton>
 
-              {/* filter */}
               <IonButton fill="clear" size="small" className="filter-btn">
                 <IonIcon slot="icon-only" icon={filterOutline} color="medium" />
               </IonButton>
@@ -180,7 +184,7 @@ const Invoices: React.FC = () => {
                 onCall={() => { }}
                 formatDate={format_date}
                 formatPhone={format_phone}
-                isSelected={item?.id === invoice.id}
+                isSelected={selected?.id === invoice.id && mode === 'view'}
               />
             ))
           ) : (
@@ -213,48 +217,31 @@ const Invoices: React.FC = () => {
         </div>
       </div>
 
-      {/* Модалка СОЗДАНИЯ */}
       <CreateInvoiceModal
-        isOpen={createOpen}
-        onClose={() => setCreateOpen(false)}
+        isOpen={mode === 'create'}
+        onClose={() => setMode('none')}
         workers={workers}
-        onCreated={() => {
-          setCreateOpen(false);
-          forceRefreshInvoices();
+        onCreated={async () => {
+          setMode('none');
+          await forceRefreshInvoices();
         }}
       />
 
-      {/* Модалка ЗАЯВКИ */}
-      {item && view && item.number && (
+      {selected && selected.number && (
         <InvoiceView
-          isOpen={view}
-          invoice={item}
-          invoiceStatus={get_inv_status(item)}
+          isOpen={mode === 'view'}
+          invoice={selected}
+          invoiceStatus={get_inv_status(selected)}
           formatDate={format_date}
           formatPhone={format_phone}
           onUpdateLic={handleUpdateLic}
-          onNavigateToActs={() => {
-            setView(false);
-            setExec(true);
-          }}
+          onUpdateWorker={handleAssignWorker}
+          onSaveInvoice={handleSaveInvoice}
           onNavigateToPrint={() => { }}
           onUpdateAddress={handleUpdateAddress}
-          onClose={() => {
-            setView(false);
-            setItem(null);
-          }}
+          onClose={closeModals}
         />
       )}
-
-      {item && exec && (
-        <InvExecute
-          invoice={item}
-          isOpen={exec}
-          onClose={() => setExec(false)}
-          onAssignToExecutor={handleUpdateWorker}
-        />
-      )}
-      
     </div>
   );
 };

@@ -34,8 +34,9 @@ import {
   chevronDownOutline
 } from 'ionicons/icons';
 
-import { post } from '../../../Store/api';
+import { getLic, getLics, setInvoice } from '../../../Store/api';
 import { useToken } from '../../../Store/loginStore';
+import { useLicsStore } from '../../../Store/licsStore';
 import { useToast } from '../../Toast';
 
 import FindLics from '../../Lics/components/FindLic/FindLics';
@@ -170,12 +171,12 @@ export default function CreateInvoiceModal({ isOpen, onClose, workers, onCreated
 
     setSearchingLic(true);
     try {
-      const res = await post('get_lic', { token, code });
-      const data = res?.data || res;
+      const res = await getLic(token, code);
+      const data = res.data;
 
-      if (data && res?.error !== true && (data.name || data.address)) {
+      if (res.ok && data && (data.name || data.address)) {
         setApplicant(data.name || data.applicant || '');
-        setAddress(data.address || '');
+        setAddress(typeof data.address === 'string' ? data.address : (data.address?.address || ''));
         setLic({ id: data.id ? String(data.id) : code, code: code, name: data.name || data.applicant || '' });
         toast.success('Данные успешно загружены');
       } else {
@@ -192,8 +193,8 @@ export default function CreateInvoiceModal({ isOpen, onClose, workers, onCreated
 
   const hydrateFromLics = async (licId: string, licCode: string) => {
     if (!token) return;
-    const res = await post('get_lics', { token });
-    const list = (res && res.error === false && Array.isArray(res.data)) ? res.data : [];
+    const res = await getLics(token);
+    const list = res.ok ? res.data : [];
 
     const found =
       list.find((x: any) => String(x.id) === String(licId)) ||
@@ -216,8 +217,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, workers, onCreated
     setLicCodeInput(licCode);
     setLic({ id: licId, code: licCode, name: '' });
 
-    await post('add_lic', { token, lc: licCode, id: licId });
-    await new Promise((r) => setTimeout(r, 700));
+    await useLicsStore.getState().addLic(token, licCode, licId);
     await hydrateFromLics(licId, licCode);
 
     setPickLicOpen(false);
@@ -251,8 +251,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, workers, onCreated
 
     setLoading(true);
     try {
-      console.log('set_invoice', payload);
-      const res = await post('set_invoice', payload);
+      const res = await setInvoice(payload);
 
       if (res?.success) {
         toast.success(res?.message || 'Данные успешно сохранены');

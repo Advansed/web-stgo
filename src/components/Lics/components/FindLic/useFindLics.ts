@@ -1,6 +1,6 @@
 // Оптимизированный useLics.ts
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { getData } from "../../../../Store/api";
+import { getSettlements, getStreets, getHouses } from "../../../../Store/api";
 import { useToken } from "../../../../Store/loginStore";
 
 export interface DropdownOption {
@@ -43,7 +43,7 @@ export const useLics = (): useLicsReturn => {
         loading:        false
     });
 
-    const token = useToken();
+    const { token } = useToken();
 
     // Ref для отмены запросов
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -86,7 +86,7 @@ export const useLics = (): useLicsReturn => {
         setLoadingSafe(true);
         
         try {
-            const res = await getData("getSettlements", { token });
+            const res = await getSettlements(token);
             
             if (!res.error && mountedRef.current) {
                 setStateSafe({ 
@@ -136,7 +136,7 @@ export const useLics = (): useLicsReturn => {
         setLoadingSafe(true);
         
         try {
-            const res = await getData("getStreets", { token, s_id: id });
+            const res = await getStreets(token, id);
             
             if (!res.error && mountedRef.current) {
                 setStateSafe({ 
@@ -170,8 +170,7 @@ export const useLics = (): useLicsReturn => {
                 token, 
                 ids: JSON.parse(ids) 
             };
-            const res = await getData("getHouses", params);
-            console.log( res )
+            const res = await getHouses(params);
             if (!res.error && mountedRef.current) {
                 setStateSafe({ 
                     houses: res.data,
