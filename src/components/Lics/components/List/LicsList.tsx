@@ -22,11 +22,11 @@ const LicsList: React.FC<LicsListProps> = ({
   getDebtStatus
 }) => {
   const sortedData = useMemo(
-    () => [...data].sort((a, b) => a.code.localeCompare(b.code)),
+    () => [...data].sort((a, b) => String(a.code || '').localeCompare(String(b.code || ''))),
     [data]
   );
 
-  if (loading) {
+  if (loading && data.length === 0) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
 

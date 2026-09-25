@@ -18,9 +18,13 @@ const Home: React.FC = () => {
   const { workers } = useWorkers();
 
   // Статистика (Логика сохранена)
-  const activeInvoices = invoices?.filter((i: any) => i.status === 'В работе' || i.status === 'Новый')?.length || 0;
+  const activeInvoices = invoices?.filter((i: any) =>
+    ['Новый', 'Назначен', 'В работе', 'Отложен'].includes(String(i.status || ''))
+  )?.length || 0;
   const workersOnline = workers?.length || 0;
-  const completedToday = invoices?.filter((i: any) => i.status === 'Выполнена')?.length || 0;
+  const completedToday = invoices?.filter((i: any) =>
+    i.status === 'Завершен' || i.status === 'Выполнена'
+  )?.length || 0;
 
   const getGreeting = () => {
     const hour = new Date().getHours();

@@ -53,7 +53,7 @@ export const InvExecute: React.FC<ActExecutionModalProps> = ({
   // Находим текущего работника заявки
   const currentExecutor = useMemo(() => {
      if (!invoice.worker) return undefined;
-     return executors.find(e => e.name === invoice.worker.name || e.id === invoice.worker.id);
+     return executors.find(e => e.name === invoice.worker!.name || e.id === invoice.worker!.id);
   }, [invoice.worker, executors]);
 
   const [selectedExecutor, setSelectedExecutor] = useState<any>(currentExecutor);
@@ -167,7 +167,11 @@ export const InvExecute: React.FC<ActExecutionModalProps> = ({
             <div className={styles.infoGrid}>
                <div className={styles.infoItem}>
                  <span className={styles.infoLabel}>Адрес:</span>
-                 <span className={styles.infoValue}>{invoice.address?.address}</span>
+                 <span className={styles.infoValue}>
+                   {typeof invoice.address === 'string'
+                     ? invoice.address
+                     : invoice.address?.address}
+                 </span>
                </div>
                <div className={styles.infoItem}>
                  <span className={styles.infoLabel}>Задача:</span>

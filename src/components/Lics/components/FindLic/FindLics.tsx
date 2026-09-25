@@ -90,8 +90,12 @@ const FindLics: React.FC<LicsFormProps> = ({
             type: 'lics',
             name: foundLic.code,
             id: foundLic.id,
+            address: foundLic.address || '',
+            applicant: foundLic.name || '',
+            fio: foundLic.name || '',
         });
-    }, [foundLic, onSelect]);
+        onClose();
+    }, [foundLic, onSelect, onClose]);
 
     const handleSelect = useCallback((item: any) => {
         switch (item.type) {

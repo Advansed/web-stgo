@@ -24,11 +24,10 @@ const Lics: React.FC = () => {
     if (token && location.pathname === '/lics') {
       loadLics(token);
     }
-  }, [token, location.key, location.pathname, loadLics]);
+  }, [token, location.pathname, loadLics]);
 
-  const handleLicAdd = async (lic: any) => {
-    await addLic(token, lic.name, lic.id); 
-    setAdd(false);
+  const handleLicAdd = (lic: any) => {
+    void addLic(token, lic.name, lic.id);
   };
 
   const handleLicDel = async (lc: string) => {

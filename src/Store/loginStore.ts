@@ -18,7 +18,9 @@ export const useLoginStore = create<any>()(
 
       setToken:  ( token: string) => set({ token }),
 
-      setLoading: (loading: boolean) => set({ isLoading: loading })
+      setLoading: (loading: boolean) => set({ isLoading: loading }),
+
+      logout: () => set({ auth: false, token: null, user: null }),
 
     }),
     {

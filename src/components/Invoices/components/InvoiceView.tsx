@@ -1,131 +1,90 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import styles from './InvoiceView.module.css';
-import { Invoice } from './InvoiceList/InvoiceItem';
-import { IonModal, IonIcon, IonSpinner } from '@ionic/react';
+import { Invoice, InvoiceWork } from './InvoiceList/InvoiceItem';
+import { IonIcon, IonSpinner } from '@ionic/react';
 import {
   closeOutline, printOutline, locationOutline, personOutline,
   walletOutline, timeOutline, documentTextOutline,
-  checkmarkCircleOutline, alertCircleOutline, constructOutline,
-  searchOutline, ellipsisHorizontal, chatbubbleOutline,
-  eyeOutline, saveOutline, statsChartOutline, closeCircleOutline,
-  addCircleOutline,
+  constructOutline, cogOutline, briefcaseOutline,
+  chatbubbleOutline, eyeOutline, chevronDownOutline,
 } from 'ionicons/icons';
-import { AddressForm } from '../../Lics/components/FindAddress/FindAddress';
-import FindLics from '../../Lics/components/FindLic/FindLics';
 import { LicForm } from '../../Lics/components/LicsForm';
-import WorkerPicker from './WorkerPicker';
 import { useToken } from '../../../Store/loginStore';
-import { useWorkers, WorkerData } from '../../../Store/navigationStore';
-import { getLic } from '../../../Store/api';
+import { useWorkers } from '../../../Store/navigationStore';
+import { useInvoices } from '../../../Store/invoiceStore';
+import { getLic, isApiOk } from '../../../Store/api';
 import { useToast } from '../../Toast';
-import { formatDate, getDisplayAddress as formatDisplayAddress } from '../../../utils/format';
-
-type WorkStatus = 'Новый' | 'В работе' | 'Выполнена' | 'Отложена' | 'Отменена';
-const WORK_STATUSES: WorkStatus[] = ['Новый', 'В работе', 'Выполнена', 'Отложена', 'Отменена'];
+import { formatDate } from '../../../utils/format';
 
 interface InvoiceModalProps {
-  invoice:            Invoice;
-  invoiceStatus:      any;
-  formatDate?:        (dateString: string) => string;
-  formatPhone?:       (phone: string) => string;
-  onNavigateToPrint:  () => void;
-  onUpdateWorker?:    (worker: WorkerData | null) => void | Promise<void>;
-  onSaveInvoice?:     (data: { status: string; comment: string; worker?: any }) => void | Promise<void>;
-  onUpdateAddress?:   (invoiceId: string, newAddress: any) => void;
-  onUpdateLic?:       ( lic: any ) => void;
-  isOpen:             boolean;
-  onClose:            () => void;
+  invoice: Invoice;
+  formatDate?: (dateString: string) => string;
+  onNavigateToPrint?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const extractLicCode = (invoice: any): string => {
-  if (!invoice) return '';
-  const raw =
-    invoice.lic ??
-    invoice.ЛС ??
-    invoice.лс ??
-    invoice.lic_code ??
-    invoice.lc ??
-    '';
-
-  if (raw == null || raw === '') return '';
-  if (typeof raw === 'string' || typeof raw === 'number') {
-    const s = String(raw).trim();
-    return s === '[object Object]' ? '' : s;
-  }
-  if (typeof raw === 'object') {
-    const code = raw.code ?? raw.lc ?? raw.name ?? raw.номер ?? raw.Номер ?? '';
-    return String(code).trim();
-  }
-  return '';
-};
-
-const extractComment = (invoice: any): string => {
-  const raw = invoice?.comment ?? invoice?.Комментарий ?? invoice?.complete_text ?? '';
-  return typeof raw === 'string' ? raw : '';
-};
+const formatMoney = (n: number) =>
+  Number(n || 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export const InvoiceView: React.FC<InvoiceModalProps> = ({
   invoice,
   onNavigateToPrint,
-  onUpdateWorker,
-  onSaveInvoice,
-  onUpdateAddress,
-  onUpdateLic,
   isOpen,
   onClose,
 }) => {
-  const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
-  const [isUpdatingLic, setIsUpdatingLic] = useState(false);
-  const [isSelectingWorker, setIsSelectingWorker] = useState(false);
-  const [isViewingLic, setIsViewingLic] = useState(false);
-  const [licData, setLicData] = useState<any>(null);
-  const [licLoading, setLicLoading] = useState(false);
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { token } = useToken();
-  const { workers } = useWorkers();
-  const toast = useToast();
+  const [isViewingLic, setIsViewingLic]     = useState(false);
+  const [licData, setLicData]               = useState<any>(null);
+  const [licLoading, setLicLoading]         = useState(false);
+  const [executorOpen, setExecutorOpen]     = useState(false);
+  const [executorSaving, setExecutorSaving] = useState(false);
+  const { token }                           = useToken();
+  const { workers }                         = useWorkers();
+  const { data: invoices, assignWorker }    = useInvoices();
+  const toast                               = useToast();
+  const currentInvoiceId                    = useRef(invoice?.id);
 
-  const [localAddress, setLocalAddress] = useState<any>(invoice?.address);
-  const [localWorker, setLocalWorker] = useState<any>(invoice?.worker);
-  const [localStatus, setLocalStatus] = useState<string>(invoice?.status || 'Новый');
-  const [localComment, setLocalComment] = useState<string>(extractComment(invoice));
-  const currentInvoiceId = useRef(invoice?.id);
+  const safeInvoice                         = useMemo(() => {
+    const fromStore = invoices.find(
+      (inv: any) => inv.id === invoice?.id || inv.Ссылка === invoice?.id
+    );
+    return (fromStore || invoice) as any;
+  }, [invoices, invoice]);
+  const works: InvoiceWork[]                = Array.isArray(safeInvoice.works) ? safeInvoice.works : [];
+  const comment                             = typeof safeInvoice.comment === 'string' ? safeInvoice.comment : '';
+  const description                         = safeInvoice.description || safeInvoice.service || '';
+  const licCode                             = String(safeInvoice.lic || '').trim();
+  const applicant                           = safeInvoice.applicant || '';
+  const address                             = typeof safeInvoice.address === 'string' ? safeInvoice.address: (safeInvoice.address?.address || '');
+  const executorId                          = String(safeInvoice.executor || safeInvoice.worker?.id || '').trim();
 
-  const safeInvoice = invoice as any;
-  const licCode = extractLicCode(safeInvoice);
+  const selectedWorker                      = useMemo(
+    () => workers.find((w: any) => String(w.id) === executorId),
+    [workers, executorId]
+  );
+  const executorName                        = selectedWorker?.name || (executorId ? executorId : 'Не назначен');
 
   useEffect(() => {
     if (invoice?.id && invoice.id !== currentInvoiceId.current) {
       currentInvoiceId.current = invoice.id;
-      setLocalAddress(invoice.address);
-      setLocalWorker(invoice.worker);
-      setLocalStatus(invoice.status || (invoice as any).Статус || 'Новый');
-      setLocalComment(extractComment(invoice));
       setLicData(null);
       setIsViewingLic(false);
-      setStatusDropdownOpen(false);
-      return;
+      setExecutorOpen(false);
     }
-    if (invoice?.address) setLocalAddress(invoice.address);
-    if (invoice?.worker !== undefined) setLocalWorker(invoice.worker);
-    if (invoice?.status) setLocalStatus(invoice.status);
-  }, [invoice?.id, invoice?.address, invoice?.worker, invoice?.status]);
+  }, [invoice?.id]);
 
   useEffect(() => {
     if (!isOpen) {
       setLicData(null);
       setIsViewingLic(false);
       setLicLoading(false);
-      setIsSelectingWorker(false);
-      setStatusDropdownOpen(false);
+      setExecutorOpen(false);
     }
   }, [isOpen]);
 
   const openLicCard = async () => {
     if (!licCode) {
       toast.warning('Лицевой счет не привязан');
-      setIsUpdatingLic(true);
       return;
     }
     if (!token) {
@@ -164,17 +123,30 @@ export const InvoiceView: React.FC<InvoiceModalProps> = ({
     }
   };
 
-  const handleSave = async () => {
-    if (!onSaveInvoice) return;
-    setIsSaving(true);
+  const handlePickExecutor = async (worker: any) => {
+    if (!token) {
+      toast.error('Нет токена авторизации');
+      return;
+    }
+    if (!worker?.id) return;
+    if (String(worker.id) === executorId) {
+      setExecutorOpen(false);
+      return;
+    }
+
+    setExecutorSaving(true);
     try {
-      await onSaveInvoice({
-        status: localStatus,
-        comment: localComment,
-        worker: localWorker,
-      });
+      const res = await assignWorker(token, safeInvoice.id, worker);
+      if (res?.success || isApiOk(res)) {
+        toast.success(res?.message || 'Исполнитель назначен');
+        setExecutorOpen(false);
+      } else {
+        toast.error(res?.message || 'Не удалось назначить исполнителя');
+      }
+    } catch {
+      toast.error('Ошибка сети при назначении');
     } finally {
-      setIsSaving(false);
+      setExecutorSaving(false);
     }
   };
 
@@ -184,29 +156,6 @@ export const InvoiceView: React.FC<InvoiceModalProps> = ({
     if (typeof val === 'number') return String(val);
     if (typeof val === 'object') return val.name || val.value || '';
     return '';
-  };
-
-  const getDisplayAddress = () =>
-    formatDisplayAddress(localAddress || safeInvoice.address || safeInvoice.Адрес);
-
-  const getStatusStyle = (status: string) => {
-    const s = safeString(status);
-    if (s === 'Новый') return styles.statusNew;
-    if (s === 'В работе') return styles.statusWork;
-    if (s === 'Выполнена') return styles.statusDone;
-    if (s === 'Отложена') return styles.statusHold;
-    if (s === 'Отменена') return styles.statusFail;
-    return styles.statusFail;
-  };
-
-  const getStatusIcon = (status: string) => {
-    const s = safeString(status);
-    if (s === 'Новый') return addCircleOutline;
-    if (s === 'В работе') return constructOutline;
-    if (s === 'Выполнена') return checkmarkCircleOutline;
-    if (s === 'Отложена') return alertCircleOutline;
-    if (s === 'Отменена') return closeCircleOutline;
-    return statsChartOutline;
   };
 
   if (!isOpen || !invoice) return null;
@@ -219,9 +168,11 @@ export const InvoiceView: React.FC<InvoiceModalProps> = ({
             <div className={styles.modalToolbar}>
               <div className={styles.modalTitle}>Заявка #{safeInvoice.number}</div>
               <div className={styles.headerButtons}>
-                <button type="button" className={styles.iconBtn} onClick={onNavigateToPrint}>
-                  <IonIcon icon={printOutline} />
-                </button>
+                {onNavigateToPrint && (
+                  <button type="button" className={styles.iconBtn} onClick={onNavigateToPrint}>
+                    <IonIcon icon={printOutline} />
+                  </button>
+                )}
                 <button type="button" className={styles.iconBtn} onClick={onClose}>
                   <IonIcon icon={closeOutline} />
                 </button>
@@ -238,228 +189,205 @@ export const InvoiceView: React.FC<InvoiceModalProps> = ({
                   {formatDate(safeString(safeInvoice.date))}
                 </div>
               </div>
-              <div className={styles.statusWrap}>
-                <button
-                  type="button"
-                  className={`${styles.statusBadge} ${getStatusStyle(localStatus)} ${styles.statusBtn}`}
-                  onClick={() => setStatusDropdownOpen((v) => !v)}
-                >
-                  <IonIcon icon={getStatusIcon(localStatus)} />
-                  {localStatus}
-                </button>
-                {statusDropdownOpen && (
-                  <div className={styles.statusOptions}>
-                    {WORK_STATUSES.map((st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        className={`${styles.statusOption} ${localStatus === st ? styles.statusOptionActive : ''}`}
-                        onClick={() => {
-                          setLocalStatus(st);
-                          setStatusDropdownOpen(false);
-                        }}
-                      >
-                        <IonIcon icon={getStatusIcon(st)} />
-                        {st}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className={styles.detailsList}>
-              <div className={styles.detailCard}>
-                <div className={`${styles.iconBox} ${styles.bgRed}`}>
-                  <IonIcon icon={locationOutline} />
+              {description && (
+                <div className={styles.detailCard}>
+                  <div className={`${styles.iconBox} ${styles.bgOrange}`}>
+                    <IonIcon icon={documentTextOutline} />
+                  </div>
+                  <div className={styles.contentData}>
+                    <div className={styles.label}>Описание</div>
+                    <div className={styles.value} style={{ whiteSpace: 'pre-wrap' }}>
+                      {description}
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.contentData}>
-                  <div className={styles.label}>Адрес объекта</div>
-                  <div className={styles.value}>{getDisplayAddress()}</div>
-                </div>
-                <div className={styles.actionSlot}>
-                  <button
-                    type="button"
-                    className={styles.miniBtn}
-                    onClick={() => setIsUpdatingAddress(true)}
-                  >
-                    <IonIcon icon={searchOutline} />
-                  </button>
-                </div>
-              </div>
+              )}
 
-              {safeInvoice.applicant && (
+              {address && (
+                <div className={styles.detailCard}>
+                  <div className={`${styles.iconBox} ${styles.bgRed}`}>
+                    <IonIcon icon={locationOutline} />
+                  </div>
+                  <div className={styles.contentData}>
+                    <div className={styles.label}>Адрес</div>
+                    <div className={styles.value}>{address}</div>
+                  </div>
+                </div>
+              )}
+
+              {applicant && (
                 <div className={styles.detailCard}>
                   <div className={`${styles.iconBox} ${styles.bgBlue}`}>
                     <IonIcon icon={personOutline} />
                   </div>
                   <div className={styles.contentData}>
                     <div className={styles.label}>Заявитель</div>
-                    <div className={styles.value}>{safeInvoice.applicant}</div>
+                    <div className={styles.value}>{applicant}</div>
                   </div>
                 </div>
               )}
-
-              <div
-                className={styles.detailCard}
-                role={onUpdateWorker ? 'button' : undefined}
-                onClick={onUpdateWorker ? () => setIsSelectingWorker(true) : undefined}
-                style={onUpdateWorker ? { cursor: 'pointer' } : undefined}
-              >
-                <div className={`${styles.iconBox} ${styles.bgDark}`}>
-                  <IonIcon icon={constructOutline} />
-                </div>
-                <div className={styles.contentData}>
-                  <div className={styles.label}>Исполнитель</div>
-                  <div className={styles.value}>
-                    {localWorker?.name || '— не назначен —'}
-                  </div>
-                </div>
-                {onUpdateWorker && (
-                  <div className={styles.actionSlot} onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className={styles.miniBtn}
-                      onClick={() => setIsSelectingWorker(true)}
-                      title="Выбрать исполнителя"
-                    >
-                      <IonIcon icon={searchOutline} />
-                    </button>
-                  </div>
-                )}
-              </div>
 
               <div className={styles.detailCard}>
                 <div className={`${styles.iconBox} ${styles.bgPurple}`}>
                   <IonIcon icon={walletOutline} />
                 </div>
-                <div className={styles.contentData}>
+                <div className={styles.contentData} style={{ flex: 1 }}>
                   <div className={styles.label}>Лицевой счет</div>
                   <div className={styles.value}>{licCode || 'Без Л/С'}</div>
                 </div>
                 <div className={styles.actionSlot}>
                   <button
-                    type="button"
-                    className={styles.miniBtn}
-                    onClick={openLicCard}
-                    title="Карточка абонента"
-                    disabled={licLoading}
+                    type        = "button"
+                    className   = { styles.miniBtn }
+                    onClick     = { openLicCard }
+                    title       = "Карточка абонента"
+                    disabled    = { licLoading || !licCode }
                   >
                     {licLoading ? <IonSpinner name="dots" /> : <IonIcon icon={eyeOutline} />}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.miniBtn}
-                    onClick={() => setIsUpdatingLic(true)}
-                    title="Выбрать лицевой счет"
-                  >
-                    <IonIcon icon={ellipsisHorizontal} />
                   </button>
                 </div>
               </div>
 
-              {(safeInvoice.service || safeInvoice.complete_text) && (
-                <div className={styles.detailCard}>
-                  <div className={`${styles.iconBox} ${styles.bgOrange}`}>
-                    <IonIcon icon={documentTextOutline} />
+              <div className={styles.executorWrap}>
+                <button
+                  type="button"
+                  className={`${styles.detailCard} ${styles.executorToggle}`}
+                  onClick={() => setExecutorOpen((open) => !open)}
+                  disabled={executorSaving}
+                  aria-expanded={executorOpen}
+                >
+                  <div className={`${styles.iconBox} ${styles.bgDark}`}>
+                    {executorSaving
+                      ? <IonSpinner name="dots" />
+                      : <IonIcon icon={briefcaseOutline} />}
                   </div>
                   <div className={styles.contentData}>
-                    <div className={styles.label}>Описание работ</div>
-                    <div className={styles.value} style={{ whiteSpace: 'pre-wrap' }}>
-                      {safeInvoice.service || safeInvoice.complete_text}
-                    </div>
+                    <div className={styles.label}>Исполнитель</div>
+                    <div className={styles.value}>{executorName}</div>
+                  </div>
+                  <IonIcon
+                    icon={chevronDownOutline}
+                    className={`${styles.executorChevron} ${executorOpen ? styles.executorChevronOpen : ''}`}
+                  />
+                </button>
+
+                {executorOpen && (
+                  <div className={styles.workersDropdown}>
+                    {workers.length === 0 ? (
+                      <div className={styles.workerEmpty}>Список сотрудников пуст</div>
+                    ) : (
+                      workers.map((worker: any) => {
+                        const isActive = String(worker.id) === executorId;
+                        return (
+                          <button
+                            key={worker.id}
+                            type="button"
+                            className={`${styles.workerOption} ${isActive ? styles.workerOptionActive : ''}`}
+                            onClick={() => handlePickExecutor(worker)}
+                            disabled={executorSaving}
+                          >
+                            <span className={styles.workerOptionName}>{worker.name || 'Без имени'}</span>
+                            <span className={styles.workerOptionRole}>
+                              {worker.role || 'Сотрудник'}
+                              {worker.in_work > 0 ? ` · в работе: ${worker.in_work}` : ''}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {comment && (
+                <div className={styles.commentSection}>
+                  <div className={styles.commentLabel}>
+                    <IonIcon icon={chatbubbleOutline} />
+                    Комментарий
+                  </div>
+                  <div className={styles.value} style={{ whiteSpace: 'pre-wrap', padding: '0 4px' }}>
+                    {comment}
                   </div>
                 </div>
               )}
 
-              <div className={styles.commentSection}>
-                <div className={styles.commentLabel}>
-                  <IonIcon icon={chatbubbleOutline} />
-                  Комментарий
-                </div>
-                <textarea
-                  className={styles.commentTextarea}
-                  placeholder="Укажите детали выполнения..."
-                  value={localComment}
-                  onChange={(e) => setLocalComment(e.target.value)}
-                />
+              <div className={styles.commentLabel} style={{ marginTop: 8, marginBottom: 4 }}>
+                Работы ({works.length})
               </div>
+
+              {works.length === 0 ? (
+                <div className={styles.detailCard}>
+                  <div className={styles.contentData}>
+                    <div className={styles.value}>Нет строк работ</div>
+                  </div>
+                </div>
+              ) : (
+                works.map((w) => (
+                  <div key={w.id || `${w.work_id}-${w.equip_id}`} className={styles.detailCard}>
+                    <div className={styles.workRow}>
+                      <div className={styles.workMain}>
+                        {w.work && (
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                            <div className={`${styles.iconBox} ${styles.bgOrange}`}>
+                              <IonIcon icon={constructOutline} />
+                            </div>
+                            <div className={styles.contentData}>
+                              <div className={styles.label}>Работа</div>
+                              <div className={styles.value} style={{ whiteSpace: 'pre-wrap' }}>{w.work}</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {w.equipment && (
+                          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                            <div className={`${styles.iconBox} ${styles.bgDark}`}>
+                              <IonIcon icon={cogOutline} />
+                            </div>
+                            <div className={styles.contentData}>
+                              <div className={styles.label}>Оборудование</div>
+                              <div className={styles.value}>{w.equipment}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className={styles.workMoney}>
+                        {w.amount > 0 && (
+                          <div className={styles.moneyRow}>
+                            <span className={styles.moneyLabel}>Кол-во</span>
+                            <span className={styles.moneyValue}>{w.amount}</span>
+                          </div>
+                        )}
+                        {w.price > 0 && (
+                          <div className={styles.moneyRow}>
+                            <span className={styles.moneyLabel}>Цена</span>
+                            <span className={styles.moneyValue}>{formatMoney(w.price)}</span>
+                          </div>
+                        )}
+                        {w.sum > 0 && (
+                          <div className={styles.moneyRow}>
+                            <span className={styles.moneyLabel}>Сумма</span>
+                            <span className={styles.moneyValueSum}>{formatMoney(w.sum)}</span>
+                          </div>
+                        )}
+                        {w.sum_vat > 0 && (
+                          <div className={styles.moneyRow}>
+                            <span className={styles.moneyLabel}>НДС</span>
+                            <span className={styles.moneyValue}>{formatMoney(w.sum_vat)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-
-          {onSaveInvoice && (
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.mainBtn}
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <IonSpinner name="crescent" color="light" style={{ width: 20, height: 20 }} />
-                ) : (
-                  <IonIcon icon={saveOutline} />
-                )}
-                Сохранить
-              </button>
-            </div>
-          )}
         </div>
       </div>
-
-      <IonModal
-        isOpen={isUpdatingAddress}
-        onDidDismiss={() => setIsUpdatingAddress(false)}
-        style={{
-          '--height': 'auto',
-          '--max-height': '80vh',
-          '--border-radius': '24px',
-          '--width': '100%',
-          '--max-width': '680px',
-        }}
-      >
-        <AddressForm
-          initialAddress={getDisplayAddress()}
-          onAddressChange={(data: any) => {
-            if (data) {
-              setLocalAddress(data);
-              if (onUpdateAddress) onUpdateAddress(safeInvoice.id, data);
-            }
-            setIsUpdatingAddress(false);
-          }}
-          onClose={() => setIsUpdatingAddress(false)}
-        />
-      </IonModal>
-
-      <FindLics
-        address={getDisplayAddress()}
-        isOpen={isUpdatingLic}
-        onClose={() => setIsUpdatingLic(false)}
-        onSelect={(item: any) => {
-          if (item?.type === 'lics' && item?.name) {
-            const newLic = { code: item.name, id: item.id, name: item.name };
-            setLicData(null);
-            if (onUpdateLic) onUpdateLic(newLic);
-          }
-          setIsUpdatingLic(false);
-        }}
-      />
-
-      <WorkerPicker
-        isOpen={isSelectingWorker}
-        onClose={() => setIsSelectingWorker(false)}
-        workers={workers}
-        selectedId={localWorker?.id}
-        onSelect={async (worker) => {
-          setLocalWorker(worker);
-          if (worker) {
-            setLocalStatus('В работе');
-          } else {
-            setLocalStatus('Новый');
-          }
-          if (onUpdateWorker) await onUpdateWorker(worker);
-        }}
-      />
 
       <LicForm
         isOpen={isViewingLic}

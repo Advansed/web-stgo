@@ -11,73 +11,47 @@ interface MapProps {
 
 const geocodeCache = new Map<string, number[]>();
 
-function buildBalloonHTML(inv: any) {
-  const workerObj = inv.worker || inv.Работник;
-  const workerName = workerObj?.name || 'Не назначен';
-  const status = inv.status || inv.Статус || 'Новый';
-  const addrText = typeof inv.address === 'string'
-    ? inv.address
-    : (inv.address?.address || inv.Адрес || 'Адрес не указан');
+function buildBalloonHTML(order: any) {
+  const addrText = typeof order.address === 'string'
+    ? order.address
+    : (order.address?.address || 'Адрес не указан');
+  const applicant = order.applicant || '—';
+  const lic = order.lic || '—';
+  const description = order.description || order.service || '';
 
   let dateStr = '—';
   try {
-    const d = new Date(inv.date || inv.Дата);
+    const d = new Date(order.date || order.Дата);
     dateStr = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   } catch { /* ignore */ }
-
-  let statusColor = '#2563eb';
-  let statusBg = '#eff6ff';
-  let preset = 'islands#blueDotIcon';
-  const s = String(status).toLowerCase();
-  if (s.includes('выполнен')) {
-    preset = 'islands#greenDotIcon';
-    statusColor = '#059669';
-    statusBg = '#ecfdf5';
-  } else if (s.includes('работ')) {
-    preset = 'islands#orangeDotIcon';
-    statusColor = '#d97706';
-    statusBg = '#fffbeb';
-  } else if (s.includes('отклон') || s.includes('отмен')) {
-    preset = 'islands#redDotIcon';
-    statusColor = '#dc2626';
-    statusBg = '#fef2f2';
-  }
 
   const balloonHTML = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-width: 260px; max-width: 300px; padding: 4px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <span style="background: ${statusBg}; color: ${statusColor}; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">${status}</span>
+        <span style="background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;">#${order.number || ''}</span>
         <span style="color: #94a3b8; font-size: 12px; font-weight: 500;">${dateStr}</span>
       </div>
-      <div style="font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 12px; line-height: 1.4;">${addrText}</div>
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
-        <div style="width: 32px; height: 32px; background: #f8fafc; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0;">
-          <span style="font-size: 16px;">👤</span>
-        </div>
-        <div style="display: flex; flex-direction: column;">
-          <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600;">Исполнитель</span>
-          <span style="font-size: 13px; color: ${workerName === 'Не назначен' ? '#94a3b8' : '#334155'}; font-weight: 600;">${workerName}</span>
-        </div>
-      </div>
-      ${inv.service ? `<div style="font-size: 13px; color: #475569; background: #f8fafc; padding: 10px; border-radius: 8px; line-height: 1.5;">${inv.service}</div>` : ''}
-      <div style="text-align: right; margin-top: 8px;">
-        <span style="font-size: 11px; color: #cbd5e1; font-weight: 600;">#${inv.number}</span>
+      ${description ? `<div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 10px; line-height: 1.4;">${description}</div>` : ''}
+      <div style="font-size: 13px; color: #334155; margin-bottom: 10px; line-height: 1.4;">${addrText}</div>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;">
+        <div style="font-size: 12px; color: #64748b;">Заявитель: <span style="color: #334155; font-weight: 600;">${applicant}</span></div>
+        <div style="font-size: 12px; color: #64748b;">ЛС: <span style="color: #334155; font-weight: 600;">${lic}</span></div>
       </div>
     </div>
   `;
 
-  return { balloonHTML, preset, addrText };
+  return { balloonHTML, addrText, preset: 'islands#blueDotIcon' };
 }
 
-function getCoords(inv: any): number[] | null {
+function getOrderCoords(order: any): number[] | null {
   let lat = 0, lon = 0;
-  if (inv.address && typeof inv.address === 'object') {
-    lat = Number(inv.address.lat || inv.address.Lat || 0);
-    lon = Number(inv.address.lon || inv.address.Lon || 0);
+  if (order.address && typeof order.address === 'object') {
+    lat = Number(order.address.lat || order.address.Lat || 0);
+    lon = Number(order.address.lon || order.address.Lon || 0);
   }
   if (lat === 0) {
-    lat = Number(inv.lat || inv.Lat || 0);
-    lon = Number(inv.lon || inv.Lon || 0);
+    lat = Number(order.lat || 0);
+    lon = Number(order.lon || 0);
   }
   if (lat !== 0 && lon !== 0 && !isNaN(lat)) return [lat, lon];
   return null;
@@ -167,41 +141,40 @@ const MapComponent: React.FC<MapProps> = ({ invoices: propInvoices }) => {
 
     clusterer.removeAll();
 
-    (invoices || []).forEach((inv: any) => {
-      const { balloonHTML, preset, addrText } = buildBalloonHTML(inv);
+    (invoices || []).forEach((order: any) => {
+      const { balloonHTML, preset, addrText } = buildBalloonHTML(order);
+      if (!addrText || addrText.length < 5 || addrText === 'Адрес не указан') return;
 
       const createPlacemark = (coords: number[]) =>
         new ymaps.Placemark(
           coords,
           {
-            hintContent: `№${inv.number}`,
+            hintContent: `№${order.number}`,
             balloonContent: balloonHTML,
-            iconCaption: inv.number
+            iconCaption: order.number
           },
           { preset }
         );
 
-      const coords = getCoords(inv);
+      const coords = getOrderCoords(order);
       if (coords) {
         clusterer.add(createPlacemark(coords));
         return;
       }
 
-      if (addrText && addrText.length > 5) {
-        const cached = geocodeCache.get(addrText);
-        if (cached) {
-          clusterer.add(createPlacemark(cached));
-          return;
-        }
-        ymaps.geocode(addrText).then((res: any) => {
-          const obj = res.geoObjects.get(0);
-          if (obj && clustererRef.current) {
-            const c = obj.geometry.getCoordinates();
-            geocodeCache.set(addrText, c);
-            clustererRef.current.add(createPlacemark(c));
-          }
-        }).catch(() => {});
+      const cached = geocodeCache.get(addrText);
+      if (cached) {
+        clusterer.add(createPlacemark(cached));
+        return;
       }
+      ymaps.geocode(addrText).then((res: any) => {
+        const obj = res.geoObjects.get(0);
+        if (obj && clustererRef.current) {
+          const c = obj.geometry.getCoordinates();
+          geocodeCache.set(addrText, c);
+          clustererRef.current.add(createPlacemark(c));
+        }
+      }).catch(() => {});
     });
   }, [invoices]);
 

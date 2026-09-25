@@ -54,6 +54,13 @@
   flex-direction: column;
 }
 
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
 .number {
   font-size: 15px !important;
   font-weight: 700 !important;
@@ -84,6 +91,17 @@
   white-space: nowrap;
 }
 
+.worksBadge {
+  font-size: 10px !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
 .address {
   font-size: 13px !important;
   color: #334155 !important;
@@ -107,14 +125,17 @@
 .statusNew { border-left-color: #3b82f6 !important; }
 .statusNew .statusBadge { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 
+.statusAssigned { border-left-color: #8b5cf6 !important; }
+.statusAssigned .statusBadge { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+
 .statusInProgress { border-left-color: #f59e0b !important; }
 .statusInProgress .statusBadge { background: #fffbeb; color: #b45309; border-color: #fde68a; }
 
 .statusCompleted { border-left-color: #10b981 !important; }
 .statusCompleted .statusBadge { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
 
-.statusOnHold { border-left-color: #8b5cf6 !important; }
-.statusOnHold .statusBadge { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+.statusOnHold { border-left-color: #ea580c !important; }
+.statusOnHold .statusBadge { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
 
 .statusRejected { border-left-color: #ef4444 !important; }
 .statusRejected .statusBadge { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }

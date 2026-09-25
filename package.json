@@ -10,7 +10,7 @@
     "test.e2e": "cypress run",
     "test.unit": "vitest",
     "lint": "eslint",
-    "deploy": "scp -r ./dist/* atlasov@89.108.98.207:/var/www/html && scp ./deploy/nginx-cache.conf atlasov@89.108.98.207:/var/www/html/nginx-cache.conf"
+    "deploy": "scp -r ./dist/* atlasov@89.108.98.207:/var/www/html"
   },
   "dependencies": {
     "@capacitor/app": "7.1.0",
