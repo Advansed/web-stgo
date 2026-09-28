@@ -1,6 +1,6 @@
 import { useLoginStore } from './loginStore';
 
-const url = 'https://fhd.aostng.ru/mi/';
+const url = import.meta.env.DEV ? '/mi/' : 'https://fhd.aostng.ru/mi/';
 
 export interface TResponse {
   success: boolean;

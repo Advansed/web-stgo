@@ -1,163 +1,156 @@
-// Оптимизированный DropdownFilter.tsx с корпоративными CSS классами
-import React, { useState, useCallback, useMemo } from 'react';
-import { DropdownFilterProps, DropdownOption } from './useFindLics';
-import './DropDownFilter.css'
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import type { DropdownOption } from './useFindLics';
+import './DropDownFilter.css';
 
-const DropdownFilter: React.FC<DropdownFilterProps> = ({ 
-    options = [], 
-    onSelect 
+interface DropdownFilterProps {
+  options: DropdownOption[];
+  selected?: DropdownOption | null;
+  onSelect: (item: DropdownOption) => void;
+  onClear?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  placeholder?: string;
+  label: string;
+}
+
+const DropdownFilter: React.FC<DropdownFilterProps> = ({
+  options, selected, onSelect, onClear, disabled = false, loading = false,
+  placeholder = 'Выберите значение', label,
 }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedOption, setSelectedOption] = useState<DropdownOption | null>(null);
-    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState(selected?.name || '');
+  const [filterQuery, setFilterQuery] = useState('');
+  const [highlighted, setHighlighted] = useState(-1);
+  const [placement, setPlacement] = useState({ top: 0, left: 0, width: 0, maxHeight: 260, above: false });
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const editedSelection = useRef(false);
 
-    // Мемоизированная фильтрация опций
-    const filteredOptions = useMemo(() => {
-        if (!searchTerm.trim()) return options;
-        return options.filter(option =>
-            option.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [options, searchTerm]);
+  useLayoutEffect(() => {
+    if (editedSelection.current) { editedSelection.current = false; return; }
+    setQuery(selected?.name || ''); setFilterQuery(''); setOpen(false); setHighlighted(-1);
+  }, [selected?.id, selected?.name]);
+  useEffect(() => { if (disabled) setOpen(false); }, [disabled]);
 
-    // Оптимизированные обработчики с useCallback
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
-        setHighlightedIndex(-1);
-        if (!isOpen) setIsOpen(true);
-    }, [isOpen]);
+  const updatePlacement = useCallback(() => {
+    const rect = inputRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const viewport = window.visualViewport;
+    const viewportTop = viewport?.offsetTop || 0;
+    const viewportBottom = viewportTop + (viewport?.height || window.innerHeight);
+    const below = viewportBottom - rect.bottom - 12;
+    const above = rect.top - viewportTop - 12;
+    const openAbove = below < 200 && above > below;
+    const room = openAbove ? above : below;
+    setPlacement({
+      top: openAbove ? rect.top - 6 : rect.bottom + 6,
+      left: rect.left,
+      width: rect.width,
+      maxHeight: Math.max(72, Math.min(300, room - 6)),
+      above: openAbove,
+    });
+  }, []);
 
-    const handleOptionSelect = useCallback((option: DropdownOption) => {
-        setSelectedOption(option);
-        setSearchTerm(option.name);
-        setIsOpen(false);
-        setHighlightedIndex(-1);
-        
-        if (onSelect) {
-            onSelect(option);
-        }
-    }, [onSelect]);
+  useEffect(() => {
+    if (!open) return;
+    updatePlacement();
+    window.addEventListener('resize', updatePlacement);
+    window.addEventListener('scroll', updatePlacement, true);
+    window.visualViewport?.addEventListener('resize', updatePlacement);
+    window.visualViewport?.addEventListener('scroll', updatePlacement);
+    const closeOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!inputRef.current?.contains(target) && !listRef.current?.contains(target)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    return () => {
+      window.removeEventListener('resize', updatePlacement);
+      window.removeEventListener('scroll', updatePlacement, true);
+      window.visualViewport?.removeEventListener('resize', updatePlacement);
+      window.visualViewport?.removeEventListener('scroll', updatePlacement);
+      document.removeEventListener('pointerdown', closeOutside);
+    };
+  }, [open, updatePlacement]);
 
-    const handleInputFocus = useCallback(() => {
-        setIsOpen(true);
-    }, []);
+  const filtered = options.filter((item) => item.name.toLocaleLowerCase('ru-RU').includes(filterQuery.toLocaleLowerCase('ru-RU').trim()));
+  const select = (item: DropdownOption) => {
+    setQuery(item.name);
+    setFilterQuery('');
+    setOpen(false);
+    setHighlighted(-1);
+    onSelect(item);
+  };
 
-    const handleInputBlur = useCallback(() => {
-        // Задержка для обработки клика по опции
-        setTimeout(() => {
-            setIsOpen(false);
-            setHighlightedIndex(-1);
-        }, 200);
-    }, []);
-
-    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (!isOpen) {
-            if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                setIsOpen(true);
-                e.preventDefault();
-            }
-            return;
-        }
-
-        switch (e.key) {
-            case 'Escape':
-                setIsOpen(false);
-                setHighlightedIndex(-1);
-                e.preventDefault();
-                break;
-            case 'ArrowDown':
-                setHighlightedIndex(prev => 
-                    prev < filteredOptions.length - 1 ? prev + 1 : 0
-                );
-                e.preventDefault();
-                break;
-            case 'ArrowUp':
-                setHighlightedIndex(prev => 
-                    prev > 0 ? prev - 1 : filteredOptions.length - 1
-                );
-                e.preventDefault();
-                break;
-            case 'Enter':
-                if (highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
-                    handleOptionSelect(filteredOptions[highlightedIndex]);
-                }
-                e.preventDefault();
-                break;
-        }
-    }, [isOpen, filteredOptions, highlightedIndex, handleOptionSelect]);
-
-    // Определяем CSS классы для input
-    const inputClassName = useMemo(() => {
-        const classes = ['dropdown-input'];
-        if (selectedOption) classes.push('has-value');
-        return classes.join(' ');
-    }, [selectedOption]);
-
-    // Определяем CSS классы для контейнера
-    const containerClassName = useMemo(() => {
-        const classes = ['dropdown-container'];
-        if (options.length === 0) classes.push('loading');
-        return classes.join(' ');
-    }, [options.length]);
-
-    return (
-        <div className={containerClassName}>
-            <input
-                type="text"
-                className={inputClassName}
-                value={searchTerm}
-                onChange={handleInputChange}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="Начните вводить для поиска..."
-                autoComplete="off"
-                aria-expanded={isOpen}
-                aria-haspopup="listbox"
-                role="combobox"
-            />
-            
-            {isOpen && (
-                <div 
-                    className="dropdown-list"
-                    role="listbox"
-                    data-count={filteredOptions.length}
-                >
-                    {filteredOptions.length > 0 ? (
-                        filteredOptions.map((option, index) => {
-                            const itemClasses = ['dropdown-item'];
-                            if (index === highlightedIndex) {
-                                itemClasses.push('dropdown-item--highlighted');
-                            }
-                            return (
-                                <div
-                                    key={`${option.type}-${option.id}-${index}`}
-                                    className={itemClasses.join(' ')}
-                                    onClick={() => handleOptionSelect(option)}
-                                    onMouseEnter={() => setHighlightedIndex(index)}
-                                    role="option"
-                                    aria-selected={index === highlightedIndex}
-                                    data-group={option.type}
-                                >
-                                    {option.name}
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <div className="dropdown-item dropdown-item--empty">
-                            Не найдено
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
+  return (
+    <div className="dropdown-container">
+      <input
+        ref={inputRef}
+        type="text"
+        className="dropdown-input"
+        value={query}
+        onChange={(event) => {
+          editedSelection.current = true;
+          setQuery(event.target.value);
+          setFilterQuery(event.target.value);
+          setHighlighted(-1);
+          if (selected) onClear?.();
+          setOpen(true);
+        }}
+        onFocus={() => { if (!disabled) { if (selected) setFilterQuery(''); updatePlacement(); setOpen(true); } }}
+        onClick={() => { if (!disabled) { if (selected) setFilterQuery(''); updatePlacement(); setOpen(true); } }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') { setOpen(false); return; }
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            setOpen(true);
+            setHighlighted((current) => event.key === 'ArrowDown'
+              ? (current + 1) % Math.max(filtered.length, 1)
+              : (current <= 0 ? filtered.length - 1 : current - 1));
+          }
+          if (event.key === 'Enter' && open) {
+            event.preventDefault();
+            if (filtered[highlighted]) select(filtered[highlighted]);
+            else if (filtered.length === 1) select(filtered[0]);
+          }
+        }}
+        placeholder={placeholder}
+        disabled={disabled || loading}
+        autoComplete="off"
+        role="combobox"
+        aria-label={label}
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        aria-autocomplete="list"
+      />
+      {loading && <span className="dropdown-loading" aria-live="polite">Загрузка…</span>}
+      {open && createPortal(
+        <div
+          ref={listRef}
+          id={listId}
+          className="dropdown-list"
+          role="listbox"
+          aria-label={label}
+          style={{ top: placement.top, left: placement.left, width: placement.width, maxHeight: placement.maxHeight, transform: placement.above ? 'translateY(-100%)' : undefined }}
+        >
+          {filtered.length ? filtered.map((item, index) => (
+            <button
+              key={item.type + '-' + item.id + '-' + index}
+              type="button"
+              role="option"
+              aria-selected={highlighted === index || selected?.id === item.id}
+              className={'dropdown-item' + (highlighted === index ? ' dropdown-item--highlighted' : '')}
+              onPointerDown={(event) => event.preventDefault()}
+              onMouseEnter={() => setHighlighted(index)}
+              onClick={() => select(item)}
+            >{item.name}</button>
+          )) : <div className="dropdown-empty">Ничего не найдено</div>}
+        </div>,
+        document.body,
+      )}
+    </div>
+  );
 };
 
-export default React.memo(DropdownFilter, (prevProps, nextProps) => {
-    // Кастомная функция сравнения для более точного контроля рендеринга
-    return (
-        prevProps.options === nextProps.options &&
-        prevProps.onSelect === nextProps.onSelect
-    );
-});
+export default DropdownFilter;

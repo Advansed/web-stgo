@@ -1,105 +1,42 @@
-// LicItem.tsx
 import React from 'react';
-import styles from './List.module.css';
-import { formatAddress } from '../../../../utils/format';
 import { IonIcon } from '@ionic/react';
-import { 
-  home, 
-  business, 
-  trashOutline, 
-  alertCircle, 
-  checkmarkCircle, 
-  wallet 
-} from 'ionicons/icons';
+import { arrowForwardOutline, locationOutline, trashOutline } from 'ionicons/icons';
+import { getDisplayAddress } from '../../../../utils/format';
+import styles from './List.module.css';
 
 export interface LicAccount {
   id: string;
   code: string;
-  name: string;
-  address: string;
-  plot: string;
-  debts: Array<{
-    type: string;
-    amount: number;
-    currency: string;
-  }>;
+  name?: string;
+  applicant?: string;
+  address?: string | { address?: string; value?: string };
+  debts?: Array<{ type?: string; amount?: number; sum?: number; currency?: string }>;
 }
 
-export interface LicItemProps {
+interface LicItemProps {
   lic: LicAccount;
   onLicClick: (lic: LicAccount) => void;
-  onLicDel: (licCode: string) => void;
-  formatSum: (amount: number) => string;
-  getTotalDebt: (debts: LicAccount['debts']) => number;
-  getDebtStatus: (debts: LicAccount['debts']) => 'none' | 'positive' | 'negative';
+  onDeleteRequest: (lic: LicAccount) => void;
 }
 
-const LicItem: React.FC<LicItemProps> = ({
-  lic,
-  onLicClick,
-  onLicDel,
-  formatSum,
-  getTotalDebt,
-  getDebtStatus
-}) => {
-  
-  const handleDelete = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    onLicDel(lic.code);
-  };
-
-  const handleClick = () => {
-    onLicClick(lic);
-  };
-
-  const totalDebt = getTotalDebt(lic.debts);
-  const debtStatus = getDebtStatus(lic.debts);
-
-  // Класс статуса (используем его на родителе)
-  const statusKey = `status${debtStatus.charAt(0).toUpperCase() + debtStatus.slice(1)}`;
-  const cardClass = `${styles.licItemCard} ${styles[statusKey]}`;
-  const textClass = styles[`text${debtStatus.charAt(0).toUpperCase() + debtStatus.slice(1)}`];
-
-  // Подбираем иконку
-  let StatusIcon = home;
-  if (debtStatus === 'positive') StatusIcon = alertCircle;
-  if (debtStatus === 'none') StatusIcon = checkmarkCircle;
-  if (debtStatus === 'negative') StatusIcon = wallet;
+const LicItem: React.FC<LicItemProps> = ({ lic, onLicClick, onDeleteRequest }) => {
+  const code = String(lic.code || '').trim() || 'Без номера';
+  const name = String(lic.name || lic.applicant || '').trim();
+  const address = getDisplayAddress(lic.address);
 
   return (
-    <div className={cardClass} onClick={handleClick}>
-      
-      {/* 1. Иконка статуса */}
-      <div className={styles.iconBox}>
-        <IonIcon icon={StatusIcon} />
-      </div>
-
-      {/* 2. Информация */}
-      <div className={styles.infoBox}>
-        <div className={styles.licCode}>{lic.code}</div>
-        <div className={styles.licAddress}>
-          {lic.address ? formatAddress(lic.address) : 'Адрес не указан'}
-        </div>
-      </div>
-
-      {/* 3. Сумма */}
-      <div className={styles.actionsBox}>
-        <span className={`${styles.sumValue} ${textClass}`}>
-          {formatSum(totalDebt)}
-        </span>
-        <span className={`${styles.sumLabel} ${textClass}`}>
-            {debtStatus === 'positive' ? 'Долг' : 'Баланс'}
-        </span>
-
-        <button 
-          className={styles.deleteButton} 
-          onClick={handleDelete}
-        >
-            <IonIcon icon={trashOutline} />
-        </button>
-      </div>
-
-    </div>
+    <article className={styles.card} role="listitem">
+      <button type="button" className={styles.openButton} onClick={() => onLicClick(lic)} aria-label={`Открыть лицевой счёт ${code}. ${name}. ${address}`}>
+        <span className={styles.kicker}>Лицевой счёт</span>
+        <strong className={styles.code}>{code}</strong>
+        <span className={styles.name}>{name || 'Абонент не указан'}</span>
+        <span className={styles.address}><IonIcon icon={locationOutline} aria-hidden="true" />{address}</span>
+        <span className={styles.openCue}>Открыть карточку <IonIcon icon={arrowForwardOutline} aria-hidden="true" /></span>
+      </button>
+      <button type="button" className={styles.deleteButton} onClick={() => onDeleteRequest(lic)} aria-label={`Удалить лицевой счёт ${code}`} title="Удалить из списка">
+        <IonIcon icon={trashOutline} aria-hidden="true" />
+      </button>
+    </article>
   );
 };
 

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { post, isApiOk, ApiActionResult } from './api'; // ✅ импортируем post из api.ts (нужно экспортировать)
-import { useLoginStore } from './loginStore'; // используется только в post, но оставим на всякий
 
 // ============================================================
 // 1. ТИПЫ (локальные)
@@ -65,6 +64,8 @@ let loadInvoicesToken:        string | null = null;
 interface InvoicesStore {
   data:                       any[];
   loading:                    boolean;
+  loaded:                     boolean;
+  error:                      string | null;
   setData:                    (invoices: any[]) => void;
   setLoading:                 (loading: boolean) => void;
   updateItem:                 (updates: Partial<any>) => void;
@@ -78,6 +79,8 @@ export const useInvoicesStore = create<InvoicesStore>()(
     (set, get) => ({
       data:                   [],
       loading:                false,
+      loaded:                 false,
+      error:                  null,
 
       setData:                (invoices) => set({ data: invoices }),
       setLoading:             (loading) => set({ loading }),
@@ -99,20 +102,20 @@ export const useInvoicesStore = create<InvoicesStore>()(
         }
         loadInvoicesToken = token;
         loadInvoicesInFlight = (async () => {
-          set({ loading: true });
+          set({ loading: true, error: null });
           try {
             const res = await getInvoices(token);
             const parsed = parseJsonDataField(res);
             if (isApiOk(parsed) || parsed.success || isApiOk(res) || res.success) {
               const clean = asInvoiceList(parsed.data ?? res.data).map(normalizeInvoice);
-              set({ data: clean, loading: false });
+              set({ data: clean, loading: false, loaded: true, error: null });
             } else {
-              set({ loading: false });
+              set({ loading: false, error: String(parsed.message || res.message || 'Проверьте соединение и повторите попытку.') });
             }
             return parsed.success !== undefined ? parsed : res;
           } catch (e) {
             console.error(e);
-            set({ loading: false });
+            set({ loading: false, error: 'Проверьте соединение и повторите попытку.' });
             return { success: false, message: 'Ошибка сети' };
           } finally {
             loadInvoicesInFlight = null;
@@ -170,12 +173,14 @@ export const useInvoices      = () => {
 
   const data                  = useInvoicesStore((state) => state.data);
   const loading               = useInvoicesStore((state) => state.loading);
+  const loaded                = useInvoicesStore((state) => state.loaded);
+  const error                 = useInvoicesStore((state) => state.error);
   const setData               = useInvoicesStore((state) => state.setData);
   const updateItem            = useInvoicesStore((state) => state.updateItem);
   const loadInvoices          = useInvoicesStore((state) => state.loadInvoices);
   const assignWorker          = useInvoicesStore((state) => state.assignWorker);
 
-  return { data, loading, setData, updateItem, loadInvoices, assignWorker };
+  return { data, loading, loaded, error, setData, updateItem, loadInvoices, assignWorker };
 
 };
 
@@ -489,6 +494,9 @@ const normalizeInvoice        = (inv: any) => {
     typeof inv.address === 'string'
       ? inv.address
       : (inv.address?.address || inv.Адрес || '');
+  const nestedAddress = typeof inv.address === 'object' ? inv.address : null;
+  const lat = Number(inv.lat) || Number(nestedAddress?.lat ?? nestedAddress?.Lat) || 0;
+  const lon = Number(inv.lon) || Number(nestedAddress?.lon ?? nestedAddress?.Lon) || 0;
   return {
     ...inv,
     id: inv.id || inv.Ссылка,
@@ -506,6 +514,8 @@ const normalizeInvoice        = (inv: any) => {
     lic,
     applicant: inv.applicant ?? inv.Контрагент ?? '',
     address,
+    lat,
+    lon,
     executor: inv.executor ?? null,
     status: inv.status ?? inv.Статус ?? '',
     works,

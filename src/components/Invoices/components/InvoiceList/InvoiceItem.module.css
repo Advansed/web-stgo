@@ -1,141 +1,77 @@
-/* InvoiceItem.module.css */
-
 .invoiceCard {
-  flex-shrink: 0 !important;
-  width: 100% !important;
-  
-  background: #ffffff !important;
-  border-radius: 12px !important;
-  padding: 16px !important;
-  
-  /* ВОТ ЭТО ДЕЛАЕТ КАРТОЧКУ ЦЕЛЬНОЙ (РАМКА) */
-  border: 1px solid #cbd5e1 !important; 
-  
-  /* А ЭТО ЦВЕТНАЯ ПОЛОСКА СЛЕВА */
-  border-left-width: 5px !important;
-  border-left-style: solid !important;
-  
-  /* Тень */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-  
-  cursor: pointer;
-  transition: all 0.2s ease !important;
-  position: relative;
-  overflow: hidden;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-  
-  box-sizing: border-box !important;
-}
-
-.invoiceCard:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-  border-color: #94a3b8 !important; /* Рамка темнеет */
-  z-index: 5;
-}
-
-.cardSelected {
-  background: #eff6ff !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 1px #3b82f6 !important;
-}
-
-.cardHeader {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: flex-start !important;
+  --card-edge: var(--stng-border);
+  appearance: none;
   width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid var(--stng-border);
+  border-left: 4px solid var(--card-edge);
+  border-radius: var(--stng-radius-md);
+  background: var(--stng-surface);
+  color: var(--stng-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 3px 14px rgba(24, 46, 120, .05);
+  transition: transform var(--stng-motion-fast), border-color var(--stng-motion-fast), box-shadow var(--stng-motion-fast), background var(--stng-motion-fast);
 }
-
-.headerLeft {
-  display: flex;
-  flex-direction: column;
+.invoiceCard:hover {
+  background: var(--stng-surface-hover);
+  border-color: #98bfd6;
+  border-left-color: var(--card-edge);
+  box-shadow: 0 8px 22px rgba(24, 46, 120, .1);
 }
-
-.headerRight {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.number {
-  font-size: 15px !important;
-  font-weight: 700 !important;
-  color: #1e293b !important;
-  letter-spacing: -0.3px;
-  line-height: 1.2;
-}
-
-.date {
-  font-size: 11px !important;
-  color: #64748b !important;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-}
-
+.invoiceCard:active { transform: scale(.995); }
+.invoiceCard:focus-visible { outline: 3px solid var(--stng-focus); outline-offset: 3px; }
+.invoiceCard.assigned { --card-edge: var(--stng-brand-blue); }
+.invoiceCard.work { --card-edge: #138693; }
+.invoiceCard.hold { --card-edge: var(--stng-warning); }
+.invoiceCard.success { --card-edge: #288376; }
+.invoiceCard.overdue { --card-edge: var(--stng-danger); }
+.invoiceCard.selected { background: #edf7fc; border-color: var(--stng-brand-blue); border-left-color: var(--card-edge); }
+.cardTop, .cardBottom { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cardTop { justify-content: space-between; }
+.number { font-size: 16px; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; overflow-wrap: anywhere; }
 .statusBadge {
-  font-size: 10px !important;
-  padding: 4px 8px !important;
-  border-radius: 6px !important;
+  flex: 0 0 auto;
+  max-width: 45%;
+  padding: 5px 9px;
+  border: 1px solid var(--stng-border);
+  border-radius: 999px;
+  background: #eef4f8;
+  color: var(--stng-text-muted);
+  font-size: 12px;
+  line-height: 1.25;
   font-weight: 700;
-  text-transform: uppercase;
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
   white-space: nowrap;
-}
-
-.worksBadge {
-  font-size: 10px !important;
-  padding: 3px 8px !important;
-  border-radius: 6px !important;
-  font-weight: 600;
-  background: #f8fafc;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-  white-space: nowrap;
-}
-
-.address {
-  font-size: 13px !important;
-  color: #334155 !important;
-  line-height: 1.4 !important;
-  font-weight: 500;
-  display: flex;
-  align-items: flex-start;
-  margin-top: 4px;
-  
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.addressText {
-  margin-left: 0;
+ .statusBadge.new { background: var(--stng-status-new-bg); border-color: var(--stng-status-new-border); color: var(--stng-status-new-text); }
+.statusBadge.assigned { background: var(--stng-status-assigned-bg); border-color: var(--stng-status-assigned-border); color: var(--stng-status-assigned-text); }
+.statusBadge.work { background: var(--stng-status-work-bg); border-color: var(--stng-status-work-border); color: var(--stng-status-work-text); }
+.statusBadge.hold { background: var(--stng-status-hold-bg); border-color: var(--stng-status-hold-border); color: var(--stng-status-hold-text); }
+.statusBadge.success { background: var(--stng-status-done-bg); border-color: var(--stng-status-done-border); color: var(--stng-status-done-text); }
+.address { display: flex; align-items: flex-start; gap: 7px; min-width: 0; font-size: 15px; line-height: 1.34; font-weight: 670; }
+.address ion-icon { flex: 0 0 16px; margin-top: 2px; color: var(--stng-brand-blue); font-size: 16px; }
+.address span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.description { display: block; min-width: 0; color: var(--stng-text-muted); font-size: 13px; line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.cardBottom { min-height: 23px; margin-top: 1px; color: var(--stng-text-muted); font-size: 12px; }
+.deadline, .worker { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.deadline ion-icon, .worker ion-icon { flex: 0 0 15px; font-size: 15px; }
+.deadlineOverdue { color: var(--stng-danger); font-weight: 750; }
+.worker { margin-left: auto; max-width: 32%; }
+.worker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.openIcon { flex: 0 0 18px; font-size: 18px; color: var(--stng-brand-blue); margin-left: auto; }
+.worker + .openIcon { margin-left: 2px; }
+@media (max-width: 600px) {
+  .invoiceCard { padding: 13px 14px; gap: 7px; }
+  .address { font-size: 14px; }
+  .worker { display: none; }
 }
-
-/* Цвета статусов */
-.statusNew { border-left-color: #3b82f6 !important; }
-.statusNew .statusBadge { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-
-.statusAssigned { border-left-color: #8b5cf6 !important; }
-.statusAssigned .statusBadge { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
-
-.statusInProgress { border-left-color: #f59e0b !important; }
-.statusInProgress .statusBadge { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-
-.statusCompleted { border-left-color: #10b981 !important; }
-.statusCompleted .statusBadge { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-
-.statusOnHold { border-left-color: #ea580c !important; }
-.statusOnHold .statusBadge { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
-
-.statusRejected { border-left-color: #ef4444 !important; }
-.statusRejected .statusBadge { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+@media (prefers-reduced-motion: reduce) {
+  .invoiceCard { transition: none; }
+  .invoiceCard:active { transform: none; }
+}

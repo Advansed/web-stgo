@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import styles from './ToastManager.module.css';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -59,9 +59,9 @@ const ToastItem: React.FC<{ toast: Toast }> = ({ toast }) => {
   const { removeToast } = useContext(ToastContext)!;
 
   return (
-    <div className={`${styles.toast} ${styles[toast.type]}`}>
+    <div className={`${styles.toast} ${styles[toast.type]}`} role={toast.type === 'error' ? 'alert' : 'status'}>
       <span>{toast.message}</span>
-      <button className={styles.close} onClick={() => removeToast(toast.id)}>
+      <button className={styles.close} type="button" aria-label="Закрыть уведомление" onClick={() => removeToast(toast.id)}>
         ×
       </button>
     </div>

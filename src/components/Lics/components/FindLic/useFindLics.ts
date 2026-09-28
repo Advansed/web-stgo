@@ -1,293 +1,149 @@
-// Оптимизированный useLics.ts
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { getSettlements, getStreets, getHouses } from "../../../../Store/api";
-import { useToken } from "../../../../Store/loginStore";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getSettlements, getStreets, getHouses } from '../../../../Store/api';
+import { useToken } from '../../../../Store/loginStore';
 
 export interface DropdownOption {
   id: string | number;
   name: string;
   type: string;
-  items: any[];
+  items?: any[];
+  record?: any;
 }
 
-export interface DropdownFilterProps {
-  options?: DropdownOption[];
-  onSelect?: (item: DropdownOption) => void;
-}
+type Level = 'ulus' | 'street' | 'house';
+type DirectoryState = {
+  uluses: any[];
+  settlements: any[];
+  streets: any[];
+  houses: any[];
+  kv: any[];
+  lics: any[];
+  loading: Level | null;
+  error: Level | null;
+  loadedUluses: boolean;
+  loadedStreets: boolean;
+  loadedHouses: boolean;
+};
 
-interface useLicsReturn {
-    uluses:         DropdownOption[]; 
-    settlements:    DropdownOption[]; 
-    streets:        DropdownOption[]; 
-    houses:         DropdownOption[]; 
-    kv:             DropdownOption[]; 
-    lics:           DropdownOption[]; 
-    loadUluses:     () => Promise<void>;
-    loadSettlements: (items: any[]) => Promise<void>;
-    loadStreets:    (id: string) => Promise<void>;
-    loadHouses:     (ids: string) => Promise<void>;
-    loadKv:         (items: any[]) => Promise<void>;
-    loadLics:       (items: any[]) => Promise<void>;
-    clearAll:       (name: string) => Promise<void>;
-    loading:        boolean;
-}
+const initialState: DirectoryState = {
+  uluses: [], settlements: [], streets: [], houses: [], kv: [], lics: [],
+  loading: null, error: null,
+  loadedUluses: false, loadedStreets: false, loadedHouses: false,
+};
 
-export const useLics = (): useLicsReturn => {
-    const [state, setState] = useState<any>({
-        uluses:         [],
-        settlements:    [],
-        streets:        [],
-        houses:         [],
-        kv:             [],
-        lics:           [],
-        loading:        false
-    });
+const validList = (response: any): any[] | null =>
+  response?.success !== false && response?.error !== true && Array.isArray(response?.data)
+    ? response.data
+    : null;
 
-    const { token } = useToken();
+export const useLics = (enabled: boolean) => {
+  const { token } = useToken();
+  const [state, setState] = useState<DirectoryState>(initialState);
+  const requestId = useRef(0);
 
-    // Ref для отмены запросов
-    const abortControllerRef = useRef<AbortController | null>(null);
-    const mountedRef = useRef(true);
+  const loadUluses = useCallback(async () => {
+    const id = ++requestId.current;
+    setState({ ...initialState, loading: 'ulus' });
+    if (!token) {
+      setState((current) => ({ ...current, loading: null, error: 'ulus' }));
+      return;
+    }
+    const response = await getSettlements(token);
+    if (id !== requestId.current) return;
+    const list = validList(response);
+    setState((current) => ({
+      ...current,
+      uluses: list || [],
+      loading: null,
+      error: list ? null : 'ulus',
+      loadedUluses: true,
+    }));
+  }, [token]);
 
-    // Объединенный useEffect для cleanup при размонтировании
-    useEffect(() => {
-        mountedRef.current = true;
-        
-        return () => {
-            mountedRef.current = false;
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-        };
-    }, []);
+  useEffect(() => {
+    if (enabled) void loadUluses();
+    return () => { requestId.current += 1; };
+  }, [enabled, loadUluses]);
 
-    // Оптимизированный setLoading с проверкой mounted
-    const setLoadingSafe                = useCallback((loading: boolean) => {
-        if (mountedRef.current) {
-            setState(prev => ({ ...prev, loading }));
-        }
-    }, []);
+  const loadSettlements = useCallback((items: any[]) => {
+    requestId.current += 1;
+    setState((current) => ({
+      ...current, settlements: Array.isArray(items) ? items : [],
+      streets: [], houses: [], kv: [], lics: [],
+      loading: null, error: null, loadedStreets: false, loadedHouses: false,
+    }));
+  }, []);
 
-    // Оптимизированный setState с проверкой mounted
-    const setStateSafe                  = useCallback((updates: Partial<typeof state>) => {
-        if (mountedRef.current) {
-            setState(prev => ({ ...prev, ...updates }));
-        }
-    }, []);
+  const loadStreets = useCallback(async (idValue: string) => {
+    const id = ++requestId.current;
+    setState((current) => ({
+      ...current, streets: [], houses: [], kv: [], lics: [],
+      loading: 'street', error: null, loadedStreets: false, loadedHouses: false,
+    }));
+    const response = await getStreets(token, idValue);
+    if (id !== requestId.current) return;
+    const list = validList(response);
+    setState((current) => ({
+      ...current, streets: list || [], loading: null,
+      error: list ? null : 'street', loadedStreets: true,
+    }));
+  }, [token]);
 
+  const loadHouses = useCallback(async (ids: string) => {
+    const id = ++requestId.current;
+    setState((current) => ({
+      ...current, houses: [], kv: [], lics: [],
+      loading: 'house', error: null, loadedHouses: false,
+    }));
+    let parsedIds: any;
+    try { parsedIds = JSON.parse(ids); }
+    catch {
+      if (id === requestId.current) setState((current) => ({ ...current, loading: null, error: 'house' }));
+      return;
+    }
+    const response = await getHouses({ token, ids: parsedIds });
+    if (id !== requestId.current) return;
+    const list = validList(response);
+    setState((current) => ({
+      ...current, houses: list || [], loading: null,
+      error: list ? null : 'house', loadedHouses: true,
+    }));
+  }, [token]);
 
-    const loadUluses                    = useCallback(async () => {
-        // Отменяем предыдущий запрос
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        
-        abortControllerRef.current = new AbortController();
-        setLoadingSafe(true);
-        
-        try {
-            const res = await getSettlements(token);
-            
-            if (!res.error && mountedRef.current) {
-                setStateSafe({ 
-                    uluses: res.data,
-                    // Очищаем зависимые уровни при загрузке улусов
-                    settlements: [],
-                    streets: [],
-                    houses: [],
-                    kv: [],
-                    lics: []
-                });
-            }
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
-                console.error('Load uluses error:', error);
-            }
-        } finally {
-            setLoadingSafe(false);
-        }
-    }, [setLoadingSafe, setStateSafe]);
+  const loadKv = useCallback((items: any[]) => {
+    requestId.current += 1;
+    setState((current) => ({ ...current, kv: Array.isArray(items) ? items : [], lics: [], loading: null, error: null }));
+  }, []);
 
+  const loadLics = useCallback((items: any[]) => {
+    requestId.current += 1;
+    setState((current) => ({ ...current, lics: Array.isArray(items) ? items : [], loading: null, error: null }));
+  }, []);
 
-    const loadSettlements               = useCallback(async (items: any[]) => {
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        
-        abortControllerRef.current = new AbortController();
-        
-        // Очищаем зависимые уровни
-        setStateSafe({ 
-            settlements: items,
-            streets: [],
-            houses: [],
-            kv: [],
-            lics: []
-        });
-    }, [setStateSafe]);
-    
+  const uluses = useMemo(() => state.uluses.map((item, index) => ({
+    id: index, name: String(item.ulus || ''), type: 'ulus', items: item.settlements,
+  })).filter((item) => item.name), [state.uluses]);
+  const settlements = useMemo(() => state.settlements.map((item) => ({
+    id: item.s_id, name: String(item.settlement || ''), type: 'settle',
+  })).filter((item) => item.name), [state.settlements]);
+  const streets = useMemo(() => state.streets.map((item) => ({
+    id: JSON.stringify(item.ids), name: String(item.street || ''), type: 'street',
+  })).filter((item) => item.name), [state.streets]);
+  const houses = useMemo(() => state.houses.map((item, index) => ({
+    id: index, name: String(item.house || ''), type: item.lics !== undefined ? 'house' : 'build',
+    items: item.lics !== undefined ? item.lics : item.apartments,
+  })).filter((item) => item.name), [state.houses]);
+  const kv = useMemo(() => state.kv.map((item, index) => ({
+    id: index, name: String(item.apartment || ''), type: 'kv', items: item.lics,
+  })).filter((item) => item.name), [state.kv]);
+  const lics = useMemo(() => state.lics.map((item, index) => ({
+    id: item.id ?? index, name: String(item.code || ''), type: 'lics', record: item,
+  })).filter((item) => item.name), [state.lics]);
 
-    const loadStreets                   = useCallback(async (id: string) => {
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        
-        abortControllerRef.current = new AbortController();
-        setLoadingSafe(true);
-        
-        try {
-            const res = await getStreets(token, id);
-            
-            if (!res.error && mountedRef.current) {
-                setStateSafe({ 
-                    streets: res.data,
-                    // Очищаем зависимые уровни
-                    houses: [],
-                    kv: [],
-                    lics: []
-                });
-            }
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
-                console.error('Load streets error:', error);
-            }
-        } finally {
-            setLoadingSafe(false);
-        }
-    }, [setLoadingSafe, setStateSafe]);
-    
-
-    const loadHouses                    = useCallback(async (ids: string) => {
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        
-        abortControllerRef.current = new AbortController();
-        setLoadingSafe(true);
-        
-        try {
-            const params = { 
-                token, 
-                ids: JSON.parse(ids) 
-            };
-            const res = await getHouses(params);
-            if (!res.error && mountedRef.current) {
-                setStateSafe({ 
-                    houses: res.data,
-                    // Очищаем зависимые уровни
-                    kv: [],
-                    lics: []
-                });
-            }
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
-                console.error('Load houses error:', error);
-            }
-        } finally {
-            setLoadingSafe(false);
-        }
-    }, [setLoadingSafe, setStateSafe]);
-    
-
-    const loadKv                        = useCallback(async (items: any[]) => {
-        setStateSafe({ 
-            kv: items,
-            lics: [] // Очищаем лицевые счета
-        });
-    }, [setStateSafe]);
-
-
-    const loadLics                      = useCallback(async (items: any[]) => {
-        setStateSafe({ lics: items });
-    }, [setStateSafe]);
-    
-    
-    const clearAll                      = useCallback(async (name: string) => {
-        const clearMap = {
-            'ulus': { settlements: [], streets: [], houses: [], kv: [], lics: [] },
-            'settle': { streets: [], houses: [], kv: [], lics: [] },
-            'street': { houses: [], kv: [], lics: [] },
-            'house': { kv: [], lics: [] },
-            'kv': { lics: [] }
-        };
-        
-        if (clearMap[name]) {
-            setStateSafe(clearMap[name]);
-        }
-    }, [setStateSafe]);
-
-    // Единственный useEffect для инициализации
-    useEffect(() => {
-        loadUluses();
-    }, [loadUluses]);
-
-    // Мемоизированные преобразования данных
-    const namedUluses       = useMemo(() => 
-        state.uluses.map((ul, ind) => ({
-            id: ind, 
-            name: ul.ulus, 
-            type: "ulus", 
-            items: ul.settlements
-        })), [state.uluses]
-    );
-
-    const namedSettlements  = useMemo(() => 
-        state.settlements.map(ul => ({
-            id: ul.s_id, 
-            name: ul.settlement, 
-            type: "settle"
-        })), [state.settlements]
-    );
-
-    const namedStreets      = useMemo(() => 
-        state.streets.map(ul => ({
-            id: JSON.stringify(ul.ids), 
-            name: ul.street, 
-            type: "street"
-        })), [state.streets]
-    );
-
-    const namedHouses       = useMemo(() => 
-        state.houses.map((ul, ind) => ({
-            id: ind,
-            name: ul.house,
-            type: ul.lics !== undefined ? "house" : "build",
-            items: ul.lics !== undefined ? ul.lics : ul.apartments
-        })), [state.houses]
-    );
-
-    const namedKv           = useMemo(() => 
-        state.kv.map((ul, ind) => ({
-            id: ind, 
-            name: ul.apartment, 
-            type: "kv", 
-            items: ul.lics
-        })), [state.kv]
-    );
-
-    const namedLics         = useMemo(() => 
-        state.lics.map((ul, ind) => ({
-            id: ul.id, 
-            name: ul.code, 
-            type: "lics", 
-            items: []
-        })), [state.lics]
-    );
-
-    return {
-        uluses: namedUluses,
-        settlements: namedSettlements, 
-        streets: namedStreets,
-        houses: namedHouses,
-        kv: namedKv,
-        lics: namedLics,
-        loadUluses,
-        loadSettlements,
-        loadStreets,
-        loadHouses,
-        loadKv,
-        loadLics,
-        clearAll,
-        loading: state.loading
-    };
+  return {
+    uluses, settlements, streets, houses, kv, lics,
+    loading: state.loading, error: state.error,
+    loadedUluses: state.loadedUluses, loadedStreets: state.loadedStreets, loadedHouses: state.loadedHouses,
+    loadUluses, loadSettlements, loadStreets, loadHouses, loadKv, loadLics,
+  };
 };

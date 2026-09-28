@@ -1,19 +1,12 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { IonIcon, IonSpinner } from '@ionic/react';
 import {
   constructOutline,
   closeOutline,
   searchOutline,
-  locationOutline,
-  personOutline,
-  callOutline,
-  briefcaseOutline,
-  folderOpenOutline,
-  documentTextOutline,
-  chatbubbleOutline,
-  calendarOutline,
-  checkmarkDoneOutline,
   chevronDownOutline,
+  addOutline,
+  trashOutline,
 } from 'ionicons/icons';
 
 import { getLic, getWorks, getWorkTypes, WorkType, WorkKind } from '../../../Store/api';
@@ -22,6 +15,7 @@ import { useToken } from '../../../Store/loginStore';
 import { useLicsStore } from '../../../Store/licsStore';
 import { useToast } from '../../Toast';
 import { getDisplayAddress } from '../../../utils/format';
+import { formatDeadline, invoiceStatus, isInvoiceOverdue } from '../invoicePresentation';
 
 import { AddressSuggestions } from 'react-dadata';
 import type { DaDataAddressSuggestion } from 'react-dadata';
@@ -93,8 +87,8 @@ const toWorkPayload = (row: any) => ({
 
 const makeWorkRow = (eq: any, workType?: WorkType | null) => {
   const amount = Number(eq.amount) > 0 ? Number(eq.amount) : 1;
-  const basePrice = Number(eq.tarif ?? eq.price) || 0;
-  const price = Number(workType?.price) || basePrice;
+  const basePrice = 0;
+  const price = Number(workType?.price) || 0;
   const sum = Math.round(amount * price * 100) / 100;
   return {
     id: newWorkId(),
@@ -118,12 +112,12 @@ const matchesQuery = (query: string, ...parts: any[]) => {
 };
 
 const statusPillClass = (st: string, active: boolean) => {
-  if (!active) return 'statusPill';
-  if (st === 'Назначен') return 'statusPill statusPillAssigned';
-  if (st === 'В работе') return 'statusPill statusPillWork';
-  if (st === 'Отложен') return 'statusPill statusPillHold';
-  if (st === 'Завершен') return 'statusPill statusPillDone';
-  return 'statusPill statusPillActive';
+  const tone = st === 'Назначен' ? 'Assigned'
+    : st === 'В работе' ? 'Work'
+    : st === 'Отложен' ? 'Hold'
+    : st === 'Завершен' ? 'Done'
+    : 'New';
+  return `statusPill statusPill${tone}${active ? ' statusPillSelected' : ''}`;
 };
 
 const mapInvoiceWorks = (raw: any) => {
@@ -189,6 +183,9 @@ export default function CreateInvoiceModal({
   const isEdit = !!(invoice?.id || invoice?.Ссылка);
 
   const [loading, setLoading] = useState(false);
+  const savingRef = useRef(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [workKindSearch, setWorkKindSearch] = useState('');
   const [pickLicOpen, setPickLicOpen] = useState(false);
 
   const [invoiceId, setInvoiceId] = useState('');
@@ -221,6 +218,7 @@ export default function CreateInvoiceModal({
   const [workKindOpen, setWorkKindOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [invoiceWorks, setInvoiceWorks] = useState<any[]>([]);
+  const [accountEquipments, setAccountEquipments] = useState<any[]>([]);
   const [openWorkId, setOpenWorkId] = useState('');
   const [priceListOpen, setPriceListOpen] = useState(false);
   const [priceSearch, setPriceSearch] = useState('');
@@ -269,9 +267,12 @@ export default function CreateInvoiceModal({
     setWorkKindOpen(false);
     setSearchText('');
     setInvoiceWorks([]);
+    setAccountEquipments([]);
     setOpenWorkId('');
     setPriceListOpen(false);
     setPriceSearch('');
+    setWorkKindSearch('');
+    setValidationErrors({});
   };
 
   const applyAddress = (
@@ -310,7 +311,14 @@ export default function CreateInvoiceModal({
     setWorkKindId(kindId);
     setWorkKindName(kindName);
     setStatus(String(inv.status || inv.Статус || 'Новый'));
-    setInvoiceWorks(mapInvoiceWorks(inv.works));
+    const rows = mapInvoiceWorks(inv.works);
+    const listedEquipment = parseEquipments(inv.equipments);
+    const linkedEquipment = rows.filter((row) => row.equip_id || row.equipment)
+      .map((row) => ({ id: row.equip_id, model: row.equipment }));
+    setAccountEquipments(listedEquipment.length ? listedEquipment : linkedEquipment.filter(
+      (eq, index, all) => all.findIndex((item) => String(item.id) === String(eq.id) && item.model === eq.model) === index
+    ));
+    setInvoiceWorks(rows);
     setActivePage('header');
     setExecutorOpen(false);
     setWorkKindOpen(false);
@@ -395,6 +403,28 @@ export default function CreateInvoiceModal({
     );
   };
 
+  const addWork = () => {
+    if (!lic?.id) return;
+    const row = makeWorkRow(accountEquipments.length === 1 ? accountEquipments[0] : {});
+    setInvoiceWorks((prev) => [...prev, row]);
+    setOpenWorkId(row.id);
+    setPriceListOpen(true);
+    setPriceSearch('');
+    setValidationErrors((prev) => ({ ...prev, works: '' }));
+    requestAnimationFrame(() => {
+      document.getElementById(`work-row-${row.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      document.getElementById(`work-search-${row.id}`)?.focus({ preventScroll: true });
+    });
+  };
+
+  const removeWork = (id: string) => {
+    setInvoiceWorks((prev) => prev.filter((row) => row.id !== id));
+    if (openWorkId === id) {
+      setOpenWorkId('');
+      setPriceListOpen(false);
+    }
+  };
+
   const pickExecutor = (id: string) => {
     setExecutorId(id);
     setExecutorOpen(false);
@@ -413,6 +443,7 @@ export default function CreateInvoiceModal({
   };
 
   const closeAll = () => {
+    if (savingRef.current) return;
     setPickLicOpen(false);
     setLoading(false);
     onClose();
@@ -432,11 +463,12 @@ export default function CreateInvoiceModal({
     if (licAddress) applyAddress(licAddress, 0, 0, undefined, true);
     if (data.phone) setPhone(String(data.phone));
     const list = parseEquipments(data.equipments || []);
-    setInvoiceWorks(list.map((eq) => makeWorkRow(eq)));
+    setAccountEquipments(list);
+    setInvoiceWorks([]);
     setOpenWorkId('');
     setPriceListOpen(false);
     setPriceSearch('');
-    if (list.length > 0) setActivePage('works');
+    setActivePage('header');
   };
 
   const handlePickLic = (licItem: any) => {
@@ -490,24 +522,40 @@ export default function CreateInvoiceModal({
       });
   };
 
+  const focusInvalid = (field: string, page: 'header' | 'works' = 'header') => {
+    setActivePage(page);
+    requestAnimationFrame(() => {
+      const id = field === 'works' ? 'new-invoice-works-tab' : 'new-invoice-' + field;
+      const target = document.getElementById(id);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target?.focus({ preventScroll: true });
+    });
+  };
+
   const handleSave = async () => {
+    if (savingRef.current || loading) return;
+    setValidationErrors({});
     if (!token) return toast.error('Нет token — перелогинься');
     if (!lic?.id) {
-      setActivePage('header');
+      setValidationErrors({ lic: 'В заявке не указан лицевой счёт' });
+      focusInvalid('lic');
       return toast.warning('Выберите лицевой счет');
     }
     if (!address.trim()) {
-      setActivePage('header');
+      setValidationErrors({ address: 'Укажите адрес объекта' });
+      focusInvalid('address');
       return toast.warning('Не указан адрес');
     }
     if (!applicant.trim()) {
-      setActivePage('header');
+      setValidationErrors({ applicant: 'Укажите заявителя' });
+      focusInvalid('applicant');
       return toast.warning('Не указан заявитель');
     }
     const worksPayload = invoiceWorks.filter((row) => row.work_id).map(toWorkPayload);
     if (worksPayload.length === 0) {
-      setActivePage('works');
-      return toast.warning('Выберите прейскурант хотя бы для одного оборудования');
+      setValidationErrors({ works: 'Выберите хотя бы одну работу по прейскуранту' });
+      focusInvalid('works', 'works');
+      return toast.warning('Выберите хотя бы одну работу по прейскуранту');
     }
 
     const id = isEdit
@@ -537,6 +585,7 @@ export default function CreateInvoiceModal({
       works: worksPayload,
     };
 
+    savingRef.current = true;
     setLoading(true);
     try {
       const res = await saveInvoice(invoiceDraft, token, {
@@ -558,15 +607,19 @@ export default function CreateInvoiceModal({
       if (res?.success) {
         toast.success(res?.message || 'Данные успешно сохранены');
         if (!isEdit) reset();
+        savingRef.current = false;
         closeAll();
         if (isEdit) onSaved?.();
         else onCreated?.();
       } else {
+        setValidationErrors({ save: res?.message || 'Не удалось сохранить заявку' });
         toast.error(res?.message || (isEdit ? 'Ошибка сохранения' : 'Ошибка создания'));
       }
     } catch {
+      setValidationErrors({ save: 'Ошибка сети при сохранении заявки' });
       toast.error(isEdit ? 'Ошибка сети при сохранении' : 'Ошибка сети при создании');
     } finally {
+      savingRef.current = false;
       setLoading(false);
     }
   };
@@ -577,18 +630,31 @@ export default function CreateInvoiceModal({
     ? (invoiceNumber ? `Заявка №${invoiceNumber}` : 'Заявка')
     : 'Новая заявка';
 
+  const statusPresentation = invoiceStatus({ status });
+  const now = new Date();
+  const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+  const overdue = isEdit && isInvoiceOverdue({ status, plan_date: planDate }, today);
+
   return (
     <>
-      <div className="modalOverlay" onClick={closeAll}>
-        <div className="modalContent" onClick={(e) => e.stopPropagation()}>
-          <div className="create-invoice-modal__toolbar">
-            <div className="create-invoice-modal__titleBlock">
-              <div className="create-invoice-modal__title">{title}</div>
-              {isEdit && invoiceDate && (
-                <div className="create-invoice-modal__subtitle">{invoiceDate}</div>
-              )}
+      <div className="modalOverlay createInvoiceOverlay" onClick={closeAll}>
+        <div className={`modalContent createInvoiceNew${isEdit ? ' editInvoice' : ''}`} role="dialog" aria-modal="true" aria-labelledby="create-invoice-title" onClick={(e) => e.stopPropagation()}>
+          <div className="create-invoice-modal__toolbar stng-modal-header">
+            <div className="create-invoice-modal__titleBlock stng-header-stack">
+              <span className="stng-header-eyebrow">Рабочая заявка</span>
+              <div className="editInvoiceTitleLine">
+                <div id="create-invoice-title" className="create-invoice-modal__title stng-header-title">{title}</div>
+                {isEdit && <span className={`editInvoiceBadge editInvoiceBadge--${overdue ? 'overdue' : statusPresentation.tone}`}>{overdue ? `Просрочена · ${statusPresentation.label}` : statusPresentation.label}</span>}
+              </div>
+              {isEdit ? (
+                <div className="create-invoice-modal__subtitle editInvoiceSubtitle stng-header-context">
+                  <span>{address || 'Адрес не указан'}</span>
+                  {planDate && <span>Срок: {formatDeadline(planDate)}</span>}
+                  {invoiceDate && <span>Создана: {formatDeadline(invoiceDate)}</span>}
+                </div>
+              ) : <div className="create-invoice-modal__subtitle stng-header-context">Создание новой рабочей заявки</div>}
             </div>
-            <button type="button" className="close-btn" onClick={closeAll}>
+            <button type="button" className="close-btn stng-header-close" onClick={closeAll} aria-label="Закрыть форму заявки" disabled={loading}>
               <IonIcon icon={closeOutline} />
             </button>
           </div>
@@ -606,6 +672,7 @@ export default function CreateInvoiceModal({
               Лицевая
             </button>
             <button
+              id="new-invoice-works-tab"
               type="button"
               className={`create-invoice-modal__tab ${activePage === 'works' ? 'create-invoice-modal__tabActive' : ''}`}
               onClick={() => {
@@ -615,444 +682,406 @@ export default function CreateInvoiceModal({
               }}
             >
               Табличная
-              {invoiceWorks.length > 0 && (
-                <span className="create-invoice-modal__tabBadge">{invoiceWorks.length}</span>
-              )}
+              {validationErrors.works ? <span className="create-invoice-modal__tabBadge worksTabError" aria-label="Ошибка в работах">!</span> : invoiceWorks.length > 0 && <span className="create-invoice-modal__tabBadge">{invoiceWorks.length}</span>}
             </button>
           </div>
 
           <div className="create-invoice-modal__body">
-            {activePage === 'header' && (
-              <>
-                <div className="fieldGrid fieldGrid2">
-                  {isEdit ? (
-                    <div className="fieldRow">
-                      <div className="iconBox bgPurple"><IonIcon icon={folderOpenOutline} /></div>
-                      <div className="fieldBody">
-                        <div className="fieldLabel">Лицевой счет</div>
-                        <div className={`fieldValue ${lic?.code ? '' : 'fieldValueMuted'}`}>
-                          {lic?.code || 'Не указан'}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="fieldRow fieldRowClick"
-                      onClick={() => setPickLicOpen(true)}
-                    >
-                      <div className="iconBox bgPurple"><IonIcon icon={folderOpenOutline} /></div>
-                      <div className="fieldBody">
-                        <div className="fieldLabel">Лицевой счет</div>
-                        <div className={`fieldValue ${lic?.code ? '' : 'fieldValueMuted'}`}>
-                          {lic?.code || 'Выберите лицевой счет'}
-                        </div>
-                      </div>
-                      <IonIcon icon={searchOutline} className="fieldAction" />
-                    </button>
-                  )}
-
-                  <div className="fieldRow">
-                    <div className="iconBox bgBlue"><IonIcon icon={documentTextOutline} /></div>
-                    <div className="fieldBody">
-                      <div className="fieldLabel">Статус</div>
-                      <div className="statusPills statusPillsWrap">
-                        {statusOptions.map((st) => (
-                          <button
-                            key={st}
-                            type="button"
-                            className={statusPillClass(st, status === st)}
-                            onClick={() => pickStatus(st)}
-                          >
-                            {st}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+            {activePage === 'header' && (isEdit ?
+              <div className="newInvoiceForm editInvoiceForm">
+                <section className="newInvoiceSection" aria-labelledby="edit-invoice-account-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">01</span>
+                    <div><h2 id="edit-invoice-account-heading">Абонент</h2><p>Лицевой счёт связан с этой заявкой. Контактные данные можно уточнить.</p></div>
                   </div>
-                </div>
+                  <div id="new-invoice-lic" className="editInvoiceReadonly" aria-label="Лицевой счёт" tabIndex={-1}>
+                    <span>Лицевой счёт</span>
+                    <strong>{lic?.code || 'Не указан'}</strong>
+                  </div>
+                  <div className="newInvoiceTwoFields">
+                    <label className="newInvoiceField" htmlFor="new-invoice-applicant">
+                      <span>Заявитель <b>*</b></span>
+                      <input id="new-invoice-applicant" value={applicant} onChange={(e) => { setApplicant(e.target.value); setValidationErrors((prev) => ({ ...prev, applicant: '' })); }} aria-invalid={!!validationErrors.applicant} placeholder="ФИО заявителя" />
+                      {validationErrors.applicant && <small className="newInvoiceError" role="alert">{validationErrors.applicant}</small>}
+                    </label>
+                    <label className="newInvoiceField" htmlFor="edit-invoice-phone">
+                      <span>Телефон <em>необязательно</em></span>
+                      <input id="edit-invoice-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Номер для связи" />
+                    </label>
+                  </div>
+                  {validationErrors.lic && <p className="newInvoiceError" role="alert">{validationErrors.lic}</p>}
+                </section>
 
-                <div className="fieldRow fieldRowTop addressField">
-                  <div className="iconBox bgRed"><IonIcon icon={locationOutline} /></div>
-                  <div className="fieldBody">
-                    <div className="fieldLabel">Адрес</div>
-                    <div className="addressSuggest">
+                <section className="newInvoiceSection" aria-labelledby="edit-invoice-address-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">02</span>
+                    <div><h2 id="edit-invoice-address-heading">Адрес объекта</h2><p>Проверьте адрес, по которому выполняется заявка.</p></div>
+                  </div>
+                  <label className="newInvoiceField newInvoiceAddressField" htmlFor="new-invoice-address">
+                    <span>Адрес <b>*</b></span>
+                    <span className="addressSuggest">
                       <AddressSuggestions
                         key={addressWidgetKey}
                         token={DADATA_TOKEN}
                         defaultQuery={address}
                         value={addressSuggest}
                         onChange={(suggestion) => {
-                          if (!suggestion) {
-                            applyAddress(address, 0, 0, undefined);
-                            return;
-                          }
+                          if (!suggestion) { applyAddress(address, 0, 0, undefined); return; }
                           const { lat, lon } = coordsFromSuggestion(suggestion);
                           applyAddress(suggestion.value || '', lat, lon, suggestion);
+                          setValidationErrors((prev) => ({ ...prev, address: '' }));
                         }}
                         inputProps={{
-                          placeholder: 'Начните вводить адрес…',
+                          id: 'new-invoice-address',
+                          placeholder: 'Улица, дом, населённый пункт',
                           className: 'addressSuggestInput',
+                          'aria-invalid': !!validationErrors.address,
                           onChange: (e) => {
                             const next = (e.target as HTMLInputElement).value;
                             setAddress(next);
-                            if (!next.trim()) {
-                              setAddressSuggest(undefined);
-                              setAddressLat(0);
-                              setAddressLon(0);
-                            }
+                            setValidationErrors((prev) => ({ ...prev, address: '' }));
+                            if (!next.trim()) { setAddressSuggest(undefined); setAddressLat(0); setAddressLon(0); }
                           },
                         }}
                       />
-                    </div>
-                    {(addressLat !== 0 || addressLon !== 0) && (
-                      <div className="addressCoords">
-                        lat: {addressLat.toFixed(6)} · lon: {addressLon.toFixed(6)}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                    </span>
+                    {validationErrors.address && <small className="newInvoiceError" role="alert">{validationErrors.address}</small>}
+                  </label>
+                </section>
 
-                <div className="fieldGrid fieldGrid2">
-                  <div className="fieldRow">
-                    <div className="iconBox bgGreen"><IonIcon icon={callOutline} /></div>
-                    <div className="fieldBody">
-                      <div className="fieldLabel">Телефон</div>
-                      <input
-                        className="fieldInput"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Номер телефона"
-                        type="tel"
-                      />
-                    </div>
+                <section className="newInvoiceSection" aria-labelledby="edit-invoice-details-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">03</span>
+                    <div><h2 id="edit-invoice-details-heading">Данные заявки</h2><p>Задача и информация для выполнения работ.</p></div>
                   </div>
-
-                  <div className="executorField">
-                    <button
-                      type="button"
-                      className="fieldRow fieldRowClick executorToggle"
-                      onClick={() => {
-                        setWorkKindOpen((v) => !v);
-                        setExecutorOpen(false);
-                        setOpenWorkId('');
-                        setPriceListOpen(false);
-                      }}
-                    >
-                      <div className="iconBox bgOrange"><IonIcon icon={constructOutline} /></div>
-                      <div className="fieldBody">
-                        <div className="fieldLabel">Вид работ</div>
-                        <div className={`fieldValue ${selectedWorkKind ? '' : 'fieldValueMuted'}`}>
-                          {workKindsLoading
-                            ? 'Загрузка…'
-                            : (selectedWorkKind?.name || 'Выберите вид работ')}
-                        </div>
-                      </div>
-                      {workKindsLoading
-                        ? <IonSpinner name="dots" />
-                        : <IonIcon icon={chevronDownOutline} className={`fieldChevron ${workKindOpen ? 'fieldChevronOpen' : ''}`} />}
+                  <div className="newInvoiceField newInvoiceSelect">
+                    <span>Вид работ <em>необязательно</em></span>
+                    <button type="button" className="newInvoicePicker" onClick={() => { setWorkKindOpen((value) => !value); setExecutorOpen(false); }} aria-expanded={workKindOpen}>
+                      <strong>{workKindsLoading ? 'Загружаем виды работ…' : selectedWorkKind?.name || 'Выберите вид работ'}</strong>
+                      <IonIcon icon={chevronDownOutline} aria-hidden="true" />
                     </button>
-
-                    {workKindOpen && (
-                      <div className="workKindDropdown">
-                        <button
-                          type="button"
-                          className={`workKindOption ${!workKindId ? 'workKindOptionActive' : ''}`}
-                          onClick={() => {
-                            setWorkKindId('');
-                            setWorkKindName('');
-                            setWorkKindOpen(false);
-                          }}
-                        >
-                          <span className="workKindOptionMark" />
-                          <span className="workKindOptionName">Не выбран</span>
-                        </button>
-
-                        {workKinds.length === 0 ? (
-                          <div className="emptyState">Виды работ не загружены</div>
-                        ) : workKinds.map((kind) => (
-                          <button
-                            key={kind.id}
-                            type="button"
-                            className={`workKindOption ${String(kind.id) === workKindId ? 'workKindOptionActive' : ''}`}
-                            onClick={() => {
-                              setWorkKindId(kind.id);
-                              setWorkKindName(kind.name);
-                              setWorkKindOpen(false);
-                            }}
-                          >
-                            <span className="workKindOptionMark" />
-                            <span className="workKindOptionName">{kind.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    {workKindOpen && <div className="newInvoiceOptions">
+                      <input type="search" aria-label="Поиск вида работ" placeholder="Найти вид работ" value={workKindSearch} onChange={(e) => setWorkKindSearch(e.target.value)} />
+                      {workKindsLoading ? <p>Загрузка…</p> : <>
+                        <button type="button" onClick={() => { setWorkKindId(''); setWorkKindName(''); setWorkKindOpen(false); }}>Не выбран</button>
+                        {workKinds.filter((kind) => matchesQuery(workKindSearch, kind.name)).map((kind) => <button type="button" key={kind.id} onClick={() => { setWorkKindId(kind.id); setWorkKindName(kind.name); setWorkKindOpen(false); }}>{kind.name}</button>)}
+                        {workKinds.filter((kind) => matchesQuery(workKindSearch, kind.name)).length === 0 && <p>Ничего не найдено</p>}
+                      </>}
+                    </div>}
                   </div>
-                </div>
+                  <label className="newInvoiceField" htmlFor="edit-invoice-description">
+                    <span>Описание работ <em>необязательно</em></span>
+                    <textarea id="edit-invoice-description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Что нужно сделать на объекте" />
+                  </label>
+                  <label className="newInvoiceField" htmlFor="edit-invoice-comment">
+                    <span>Комментарий <em>необязательно</em></span>
+                    <textarea id="edit-invoice-comment" rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Дополнительная информация" />
+                  </label>
+                </section>
 
-                <div className="fieldGrid fieldGrid2">
-                  <div className="fieldRow">
-                    <div className="iconBox bgBlue"><IonIcon icon={personOutline} /></div>
-                    <div className="fieldBody">
-                      <div className="fieldLabel">Заявитель</div>
-                      <input
-                        className="fieldInput"
-                        value={applicant}
-                        onChange={(e) => setApplicant(e.target.value)}
-                        placeholder="ФИО заявителя"
-                      />
+                <section className="newInvoiceSection" aria-labelledby="edit-invoice-progress-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">04</span>
+                    <div><h2 id="edit-invoice-progress-heading">Исполнение и сроки</h2><p>Состояние заявки и ответственный сотрудник.</p></div>
+                  </div>
+                  <div className="newInvoiceField">
+                    <span>Статус</span>
+                    <div className="statusPills statusPillsWrap" role="group" aria-label="Статус заявки">
+                      {statusOptions.map((st) => <button key={st} type="button" className={statusPillClass(st, status === st)} onClick={() => pickStatus(st)} aria-pressed={status === st}>{st}</button>)}
                     </div>
                   </div>
-
-                  <div className="executorField">
-                    <button
-                      type="button"
-                      className="fieldRow fieldRowClick executorToggle"
-                      onClick={() => {
-                        setExecutorOpen((v) => !v);
-                        setWorkKindOpen(false);
-                        setOpenWorkId('');
-                        setPriceListOpen(false);
-                      }}
-                    >
-                      <div className="iconBox bgDark"><IonIcon icon={briefcaseOutline} /></div>
-                      <div className="fieldBody">
-                        <div className="fieldLabel">Исполнитель</div>
-                        <div className={`fieldValue ${selectedExecutor ? '' : 'fieldValueMuted'}`}>
-                          {selectedExecutor?.name || 'Не назначать'}
-                        </div>
-                      </div>
-                      <IonIcon icon={chevronDownOutline} className={`fieldChevron ${executorOpen ? 'fieldChevronOpen' : ''}`} />
+                  <div className="newInvoiceField newInvoiceSelect">
+                    <span>Исполнитель <em>необязательно</em></span>
+                    <button type="button" className="newInvoicePicker" onClick={() => { setExecutorOpen((value) => !value); setWorkKindOpen(false); }} aria-expanded={executorOpen}>
+                      <strong>{selectedExecutor?.name || (executorId ? invoice?.worker?.name : '') || 'Не назначать'}</strong>
+                      <IonIcon icon={chevronDownOutline} aria-hidden="true" />
                     </button>
-
-                    {executorOpen && (
-                      <div className="workersDropdown">
-                        <div className="searchWrap">
-                          <IonIcon icon={searchOutline} />
-                          <input
-                            className="searchInput"
-                            placeholder="Поиск сотрудника…"
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
-                          />
-                        </div>
-
-                        <button
-                          type="button"
-                          className={`workerOption ${!executorId ? 'workerOptionActive' : ''}`}
-                          onClick={() => pickExecutor('')}
-                        >
-                          <span className="workerOptionName">Не назначать</span>
-                        </button>
-
-                        {filteredWorkers.length === 0 ? (
-                          <div className="emptyState">Нет сотрудников</div>
-                        ) : filteredWorkers.map((worker: any) => (
-                          <button
-                            key={worker.id}
-                            type="button"
-                            className={`workerOption ${String(worker.id) === executorId ? 'workerOptionActive' : ''}`}
-                            onClick={() => pickExecutor(worker.id)}
-                          >
-                            <span className="workerOptionName">{worker.name || 'Без имени'}</span>
-                            <span className="workerOptionRole">{worker.role || 'Сотрудник'}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    {executorOpen && <div className="newInvoiceOptions">
+                      <input type="search" aria-label="Поиск сотрудника" placeholder="Найти сотрудника" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
+                      <button type="button" onClick={() => pickExecutor('')}>Не назначать</button>
+                      {filteredWorkers.map((worker: any) => <button type="button" key={worker.id} onClick={() => pickExecutor(String(worker.id))}>{worker.name || 'Без имени'}{worker.role && <small>{worker.role}</small>}</button>)}
+                      {filteredWorkers.length === 0 && <p>Сотрудники не найдены</p>}
+                    </div>}
                   </div>
-                </div>
+                  <div className="newInvoiceTwoFields">
+                    <label className="newInvoiceField" htmlFor="edit-invoice-plan-date">
+                      <span>Планируемая дата <em>необязательно</em></span>
+                      <input id="edit-invoice-plan-date" type="date" value={planDate} onChange={(e) => setPlanDate(e.target.value)} />
+                    </label>
+                    <label className="newInvoiceField" htmlFor="edit-invoice-complete-date">
+                      <span>Дата выполнения <em>необязательно</em></span>
+                      <input id="edit-invoice-complete-date" type="date" value={completeDate} onChange={(e) => setCompleteDate(e.target.value)} />
+                    </label>
+                  </div>
+                </section>
 
-                <div className="fieldGrid fieldGrid2">
-                  <div className="fieldRow">
-                    <div className="iconBox bgBlue"><IonIcon icon={calendarOutline} /></div>
-                    <div className="fieldBody">
-                      <div className="fieldLabel">Планируемая дата</div>
-                      <input
-                        className="fieldInput"
-                        type="date"
-                        value={planDate}
-                        onChange={(e) => setPlanDate(e.target.value)}
+                <section className="newInvoiceSection newInvoiceWorksSummary" aria-labelledby="edit-invoice-works-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">05</span>
+                    <div><h2 id="edit-invoice-works-heading">Оборудование и работы</h2><p>Связанные строки заявки доступны на вкладке «Табличная».</p></div>
+                  </div>
+                  <div className="newInvoiceWorksLine"><span>Работы по прейскуранту</span><strong>{invoiceWorks.filter((row) => row.work_id).length} из {invoiceWorks.length}</strong></div>
+                  <button type="button" className="newInvoiceWorksAction" onClick={() => { setActivePage('works'); setWorkKindOpen(false); setExecutorOpen(false); }}>Открыть работы <IonIcon icon={chevronDownOutline} aria-hidden="true" /></button>
+                  {validationErrors.works && <p className="newInvoiceError" role="alert">{validationErrors.works}</p>}
+                </section>
+              </div> : (
+              <div className="newInvoiceForm">
+                <section className="newInvoiceSection" aria-labelledby="new-invoice-account-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">01</span>
+                    <div><h2 id="new-invoice-account-heading">Абонент</h2><p>Выберите лицевой счёт и проверьте данные заявителя.</p></div>
+                  </div>
+                  <button id="new-invoice-lic" type="button" className="newInvoicePicker" onClick={() => setPickLicOpen(true)} aria-invalid={!!validationErrors.lic}>
+                    <span><small>Лицевой счёт <b>*</b></small><strong>{lic?.code || 'Найти лицевой счёт'}</strong>{lic?.name && <em>{lic.name}</em>}</span>
+                    <IonIcon icon={searchOutline} aria-hidden="true" />
+                  </button>
+                  {validationErrors.lic && <p className="newInvoiceError" role="alert">{validationErrors.lic}</p>}
+                  <div className="newInvoiceTwoFields">
+                    <label className="newInvoiceField" htmlFor="new-invoice-applicant">
+                      <span>Заявитель <b>*</b></span>
+                      <input id="new-invoice-applicant" value={applicant} onChange={(e) => { setApplicant(e.target.value); setValidationErrors((prev) => ({ ...prev, applicant: '' })); }} aria-invalid={!!validationErrors.applicant} placeholder="ФИО заявителя" />
+                      {validationErrors.applicant && <small className="newInvoiceError" role="alert">{validationErrors.applicant}</small>}
+                    </label>
+                    <label className="newInvoiceField" htmlFor="new-invoice-phone">
+                      <span>Телефон <em>необязательно</em></span>
+                      <input id="new-invoice-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Номер для связи" />
+                    </label>
+                  </div>
+                </section>
+
+                <section className="newInvoiceSection" aria-labelledby="new-invoice-address-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">02</span>
+                    <div><h2 id="new-invoice-address-heading">Адрес объекта</h2><p>Адрес подставится из лицевого счёта; при необходимости его можно изменить.</p></div>
+                  </div>
+                  <label className="newInvoiceField newInvoiceAddressField" htmlFor="new-invoice-address">
+                    <span>Адрес <b>*</b></span>
+                    <span className="addressSuggest">
+                      <AddressSuggestions
+                        key={addressWidgetKey}
+                        token={DADATA_TOKEN}
+                        defaultQuery={address}
+                        value={addressSuggest}
+                        onChange={(suggestion) => {
+                          if (!suggestion) { applyAddress(address, 0, 0, undefined); return; }
+                          const { lat, lon } = coordsFromSuggestion(suggestion);
+                          applyAddress(suggestion.value || '', lat, lon, suggestion);
+                          setValidationErrors((prev) => ({ ...prev, address: '' }));
+                        }}
+                        inputProps={{
+                          id: 'new-invoice-address',
+                          placeholder: 'Улица, дом, населённый пункт',
+                          className: 'addressSuggestInput',
+                          'aria-invalid': !!validationErrors.address,
+                          onChange: (e) => {
+                            const next = (e.target as HTMLInputElement).value;
+                            setAddress(next);
+                            setValidationErrors((prev) => ({ ...prev, address: '' }));
+                            if (!next.trim()) { setAddressSuggest(undefined); setAddressLat(0); setAddressLon(0); }
+                          },
+                        }}
                       />
+                    </span>
+                    {validationErrors.address && <small className="newInvoiceError" role="alert">{validationErrors.address}</small>}
+                  </label>
+                </section>
+
+                <section className="newInvoiceSection" aria-labelledby="new-invoice-request-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">03</span>
+                    <div><h2 id="new-invoice-request-heading">Заявка</h2><p>Укажите задачу и желаемый срок.</p></div>
+                  </div>
+                  <div className="newInvoiceTwoFields">
+                    <div className="newInvoiceField newInvoiceSelect">
+                      <span>Вид работ <em>необязательно</em></span>
+                      <button type="button" className="newInvoicePicker" onClick={() => { setWorkKindOpen((value) => !value); setExecutorOpen(false); }} aria-expanded={workKindOpen}>
+                        <strong>{workKindsLoading ? 'Загружаем виды работ…' : selectedWorkKind?.name || 'Выберите вид работ'}</strong>
+                        <IonIcon icon={chevronDownOutline} aria-hidden="true" />
+                      </button>
+                      {workKindOpen && <div className="newInvoiceOptions">
+                        <input type="search" aria-label="Поиск вида работ" placeholder="Найти вид работ" value={workKindSearch} onChange={(e) => setWorkKindSearch(e.target.value)} />
+                        {workKindsLoading ? <p>Загрузка…</p> : <>
+                          <button type="button" onClick={() => { setWorkKindId(''); setWorkKindName(''); setWorkKindOpen(false); }}>Не выбран</button>
+                          {workKinds.filter((kind) => matchesQuery(workKindSearch, kind.name)).map((kind) => <button type="button" key={kind.id} onClick={() => { setWorkKindId(kind.id); setWorkKindName(kind.name); setWorkKindOpen(false); }}>{kind.name}</button>)}
+                          {workKinds.filter((kind) => matchesQuery(workKindSearch, kind.name)).length === 0 && <p>Ничего не найдено</p>}
+                        </>}
+                      </div>}
                     </div>
+                    <label className="newInvoiceField" htmlFor="new-invoice-plan-date">
+                      <span>Планируемая дата <em>необязательно</em></span>
+                      <input id="new-invoice-plan-date" type="date" value={planDate} onChange={(e) => setPlanDate(e.target.value)} />
+                    </label>
                   </div>
+                  <label className="newInvoiceField" htmlFor="new-invoice-description">
+                    <span>Описание работ <em>необязательно</em></span>
+                    <textarea id="new-invoice-description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Что нужно сделать на объекте" />
+                  </label>
+                  <label className="newInvoiceField" htmlFor="new-invoice-comment">
+                    <span>Комментарий <em>необязательно</em></span>
+                    <textarea id="new-invoice-comment" rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Дополнительная информация" />
+                  </label>
+                </section>
 
-                  <div className="fieldRow">
-                    <div className="iconBox bgGreen"><IonIcon icon={checkmarkDoneOutline} /></div>
-                    <div className="fieldBody">
-                      <div className="fieldLabel">Дата выполнения</div>
-                      <input
-                        className="fieldInput"
-                        type="date"
-                        value={completeDate}
-                        onChange={(e) => setCompleteDate(e.target.value)}
-                      />
-                    </div>
+                <section className="newInvoiceSection" aria-labelledby="new-invoice-worker-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">04</span>
+                    <div><h2 id="new-invoice-worker-heading">Исполнитель</h2><p>Назначьте сотрудника сейчас или оставьте заявку новой.</p></div>
                   </div>
-                </div>
+                  <div className="newInvoiceField newInvoiceSelect">
+                    <span>Сотрудник <em>необязательно</em></span>
+                    <button type="button" className="newInvoicePicker" onClick={() => { setExecutorOpen((value) => !value); setWorkKindOpen(false); }} aria-expanded={executorOpen}>
+                      <strong>{selectedExecutor?.name || 'Не назначать'}</strong>
+                      <IonIcon icon={chevronDownOutline} aria-hidden="true" />
+                    </button>
+                    {executorOpen && <div className="newInvoiceOptions">
+                      <input type="search" aria-label="Поиск сотрудника" placeholder="Найти сотрудника" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
+                      <button type="button" onClick={() => pickExecutor('')}>Не назначать</button>
+                      {filteredWorkers.map((worker: any) => <button type="button" key={worker.id} onClick={() => pickExecutor(String(worker.id))}>{worker.name || 'Без имени'}{worker.role && <small>{worker.role}</small>}</button>)}
+                      {filteredWorkers.length === 0 && <p>Сотрудники не найдены</p>}
+                    </div>}
+                  </div>
+                </section>
 
-                <div className="fieldRow fieldRowTop">
-                  <div className="iconBox bgOrange"><IonIcon icon={documentTextOutline} /></div>
-                  <div className="fieldBody">
-                    <div className="fieldLabel">Описание работ</div>
-                    <textarea
-                      className="fieldTextarea"
-                      rows={2}
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Что нужно выполнить"
-                    />
+                <section className="newInvoiceSection newInvoiceWorksSummary" aria-labelledby="new-invoice-works-heading">
+                  <div className="newInvoiceSectionHead">
+                    <span className="newInvoiceStep">05</span>
+                    <div><h2 id="new-invoice-works-heading">Работы по прейскуранту <b>*</b></h2><p>Для сохранения выберите хотя бы одну работу по прейскуранту.</p></div>
                   </div>
-                </div>
+                  <div className="newInvoiceWorksLine"><span>Выбрано работ</span><strong>{invoiceWorks.filter((row) => row.work_id).length} из {invoiceWorks.length}</strong></div>
+                  <button type="button" className="newInvoiceWorksAction" onClick={() => { setActivePage('works'); setWorkKindOpen(false); setExecutorOpen(false); }}>Перейти к работам <IonIcon icon={chevronDownOutline} aria-hidden="true" /></button>
+                  {validationErrors.works && <p className="newInvoiceError" role="alert">{validationErrors.works}</p>}
+                </section>
 
-                <div className="fieldRow fieldRowTop">
-                  <div className="iconBox bgDark"><IonIcon icon={chatbubbleOutline} /></div>
-                  <div className="fieldBody">
-                    <div className="fieldLabel">Комментарий</div>
-                    <textarea
-                      className="fieldTextarea"
-                      rows={2}
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Комментарий к заявке"
-                    />
+                <details className="newInvoiceAdvanced">
+                  <summary>Дополнительные параметры</summary>
+                  <div className="newInvoiceTwoFields">
+                    <div className="newInvoiceField"><span>Статус</span><div className="statusPills statusPillsWrap">{statusOptions.map((st) => <button key={st} type="button" className={statusPillClass(st, status === st)} onClick={() => pickStatus(st)} aria-pressed={status === st}>{st}</button>)}</div></div>
+                    <label className="newInvoiceField" htmlFor="new-invoice-complete-date"><span>Дата выполнения <em>необязательно</em></span><input id="new-invoice-complete-date" type="date" value={completeDate} onChange={(e) => setCompleteDate(e.target.value)} /></label>
                   </div>
-                </div>
-              </>
+                </details>
+              </div>
+              )
             )}
 
             {activePage === 'works' && (
-              <div className="worksSection">
-                <div className="worksSectionHeader">
-                  <div className="worksSectionTitle">Оборудование и работы</div>
-                  {invoiceWorks.length > 0 && (
-                    <span className="worksSectionCount">{invoiceWorks.length}</span>
-                  )}
+              <div className="worksWorkspace">
+                <div className="worksWorkspaceIntro">
+                  <div>
+                    <p className="worksEyebrow">Состав заявки</p>
+                    <h2>Оборудование и работы</h2>
+                    <p>Выберите работу из прейскуранта. Для сохранения нужна хотя бы одна выбранная работа.</p>
+                  </div>
+                  <button type="button" className="worksAdd" onClick={addWork} disabled={!lic?.id} aria-label="Добавить работу">
+                    <IonIcon icon={addOutline} aria-hidden="true" /> Добавить работу
+                  </button>
                 </div>
 
-                {invoiceWorks.length === 0 ? (
-                  <div className="emptyState emptyStateLarge">
-                    {lic?.code
-                      ? 'У выбранного лицевого счёта нет оборудования'
-                      : isEdit
-                        ? 'В заявке нет строк оборудования'
-                        : 'Сначала выберите лицевой счёт на странице «Лицевая»'}
+                <section className="worksEquipment" aria-labelledby="works-equipment-heading">
+                  <div className="worksSectionHeading">
+                    <h3 id="works-equipment-heading">Оборудование абонента</h3>
+                    <span>{accountEquipments.length}</span>
                   </div>
-                ) : (
-                  <div className="worksCards">
-                    {invoiceWorks.map((row) => {
-                      const isOpenRow = openWorkId === row.id;
-                      return (
-                        <div key={row.id} className={`workCard ${isOpenRow ? 'workCardOpen' : ''} ${row.work_id ? 'workCardReady' : ''}`}>
-                          <div className="workCardTop">
-                            <div className="iconBox bgOrange"><IonIcon icon={constructOutline} /></div>
-                            <div className="fieldBody">
-                              <div className="fieldLabel">Оборудование</div>
-                              <div className="fieldValue">{row.equipment || 'Без названия'}</div>
-                            </div>
-                            <button
-                              type="button"
-                              className="worksRemove"
-                              title="Убрать"
-                              onClick={() => {
-                                setInvoiceWorks((prev) => prev.filter((w) => w.id !== row.id));
-                                if (openWorkId === row.id) {
-                                  setOpenWorkId('');
-                                  setPriceListOpen(false);
-                                }
-                              }}
-                            >
-                              <IonIcon icon={closeOutline} />
-                            </button>
-                          </div>
-
-                          <button
-                            type="button"
-                            className="workCardPriceBtn"
-                            onClick={() => {
-                              const nextOpen = isOpenRow ? '' : row.id;
-                              setOpenWorkId(nextOpen);
-                              setExecutorOpen(false);
-                              setPriceListOpen(!!nextOpen);
-                              setPriceSearch('');
-                            }}
-                          >
-                            <div className="fieldBody">
-                              <div className="fieldLabel">Прейскурант</div>
-                              <div className={`fieldValue fieldValueWrap ${row.work ? '' : 'fieldValueMuted'}`}>
-                                {worksLoading ? 'Загрузка…' : (row.work || 'Выберите работу')}
-                              </div>
-                            </div>
-                            {worksLoading
-                              ? <IonSpinner name="dots" />
-                              : <IonIcon icon={chevronDownOutline} className={`fieldChevron ${isOpenRow && priceListOpen ? 'fieldChevronOpen' : ''}`} />}
-                          </button>
-
-                          {isOpenRow && priceListOpen && (
-                            <div className="workList">
-                              <div className="searchWrap">
-                                <IonIcon icon={searchOutline} />
-                                <input
-                                  className="searchInput"
-                                  autoFocus
-                                  placeholder="Поиск по прейскуранту…"
-                                  value={priceSearch}
-                                  onChange={(e) => setPriceSearch(e.target.value)}
-                                />
-                              </div>
-                              {filteredPriceWorks.length === 0 ? (
-                                <div className="emptyState">{priceWorks.length === 0 ? 'Прейскурант пуст' : 'Ничего не найдено'}</div>
-                              ) : filteredPriceWorks.map((work) => (
-                                <button
-                                  key={work.id}
-                                  type="button"
-                                  className={`workOption ${row.work_id === work.id ? 'workOptionActive' : ''}`}
-                                  onClick={() => {
-                                    patchWork(row.id, {
-                                      work_id: work.id,
-                                      work: work.name,
-                                      price: Number(work.price) || row.basePrice || 0,
-                                    });
-                                    setPriceListOpen(false);
-                                    setPriceSearch('');
-                                    setOpenWorkId('');
-                                  }}
-                                >
-                                  <span className="workOptionMark" />
-                                  <span className="workOptionName">{work.name}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="workCardMeta">
-                            <div className="workCardAmount">
-                              <div className="fieldLabel">Кол-во</div>
-                              <input
-                                className="fieldInput"
-                                type="number"
-                                min={1}
-                                step={1}
-                                value={row.amount}
-                                onChange={(e) => patchWork(row.id, { amount: Math.max(1, Number(e.target.value) || 1) })}
-                              />
-                            </div>
-                            <div className="workCardSum">
-                              <div className="fieldLabel">Сумма</div>
-                              <div className="fieldValue">{money(row.sum)}</div>
-                              <div className="workCardSumHint">{money(row.price)} × {row.amount}</div>
-                            </div>
-                          </div>
+                  {accountEquipments.length > 0 ? (
+                    <div className="worksEquipmentList">
+                      {accountEquipments.map((eq: any, index) => (
+                        <div className="worksEquipmentItem" key={String(eq.id || eq.equip_id || index)}>
+                          <IonIcon icon={constructOutline} aria-hidden="true" />
+                          <strong>{equipLabel(eq) || 'Оборудование без названия'}</strong>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="worksEquipmentEmpty">{lic?.id ? 'Оборудование не найдено. Работу можно добавить без привязки к оборудованию.' : 'Оборудование появится после выбора лицевого счёта.'}</p>
+                  )}
+                </section>
+
+                <section className="worksRowsSection" aria-labelledby="works-rows-heading">
+                  <div className="worksSectionHeading">
+                    <h3 id="works-rows-heading">Работы по прейскуранту</h3>
+                    <span>{invoiceWorks.filter((row) => row.work_id).length} выбрано</span>
                   </div>
-                )}
+                  {validationErrors.works && <p className="newInvoiceError worksValidation" role="alert">{validationErrors.works}</p>}
+                  {!lic?.id && <p className="worksNotice">Сначала выберите лицевой счёт на вкладке «Основное».</p>}
+                  {invoiceWorks.length === 0 ? (
+                    <div className="worksRowsEmpty">
+                      <strong>Работы пока не добавлены</strong>
+                      <p>Добавьте строку и выберите работу из реального прейскуранта.</p>
+                    </div>
+                  ) : (
+                    <div className="worksRows">
+                      {invoiceWorks.map((row, index) => {
+                        const isOpenRow = openWorkId === row.id && priceListOpen;
+                        const equipment = accountEquipments.find((eq: any) => String(eq.id || eq.equip_id || '') === String(row.equip_id || ''));
+                        return (
+                          <article id={`work-row-${row.id}`} key={row.id} className={`worksRow ${row.work_id ? 'worksRowReady' : 'worksRowPending'}`}>
+                            <div className="worksRowHeader">
+                              <div><span>Работа {index + 1}</span><strong>{row.work || 'Работа не выбрана'}</strong></div>
+                              <button type="button" className="worksRowDelete" onClick={() => removeWork(row.id)} aria-label={`Удалить работу ${index + 1}`} title="Удалить работу">
+                                <IonIcon icon={trashOutline} aria-hidden="true" />
+                              </button>
+                            </div>
+                            <div className="worksRowGrid">
+                              <div className="worksRowPicker">
+                                <span className="worksControlLabel">Прейскурант <b>*</b></span>
+                                <button type="button" className="worksPickerButton" onClick={() => {
+                                  setOpenWorkId(isOpenRow ? '' : row.id);
+                                  setPriceListOpen(!isOpenRow);
+                                  setPriceSearch('');
+                                }} aria-expanded={isOpenRow} aria-label={`Выбрать работу по прейскуранту для строки ${index + 1}`}>
+                                  <span>{worksLoading ? 'Загружаем прейскурант…' : row.work || 'Выберите работу'}</span>
+                                  {worksLoading ? <IonSpinner name="dots" /> : <IonIcon icon={chevronDownOutline} aria-hidden="true" />}
+                                </button>
+                                {isOpenRow && <div className="worksPickerMenu">
+                                  <input id={`work-search-${row.id}`} type="search" autoFocus aria-label="Поиск по прейскуранту" placeholder="Найти работу" value={priceSearch} onChange={(e) => setPriceSearch(e.target.value)} />
+                                  {worksLoading ? <p>Загрузка…</p> : filteredPriceWorks.length === 0 ? <p>{priceWorks.length ? 'Ничего не найдено' : 'Прейскурант пуст'}</p> : filteredPriceWorks.map((work) => (
+                                    <button type="button" key={work.id} className={row.work_id === work.id ? 'worksPickerSelected' : ''} onClick={() => {
+                                      setValidationErrors((prev) => ({ ...prev, works: '' }));
+                                      patchWork(row.id, { work_id: work.id, work: work.name, price: Number(work.price) || 0 });
+                                      setPriceListOpen(false);
+                                      setOpenWorkId('');
+                                      setPriceSearch('');
+                                    }}>{work.name}<small>{money(Number(work.price) || 0)}</small></button>
+                                  ))}
+                                </div>}
+                              </div>
+                              <div className="worksRowEquipment">
+                                <span className="worksControlLabel">Оборудование</span>
+                                {accountEquipments.length > 1 ? (
+                                  <select value={String(row.equip_id || '')} aria-label={`Оборудование для работы ${index + 1}`} onChange={(e) => {
+                                    const selected = accountEquipments.find((eq: any) => String(eq.id || eq.equip_id || '') === e.target.value);
+                                    patchWork(row.id, { equip_id: e.target.value, equipment: selected ? equipLabel(selected) : '' });
+                                  }}>
+                                    <option value="">Без оборудования</option>
+                                    {accountEquipments.map((eq: any, eqIndex) => <option key={String(eq.id || eq.equip_id || eqIndex)} value={String(eq.id || eq.equip_id || '')}>{equipLabel(eq) || 'Оборудование без названия'}</option>)}
+                                  </select>
+                                ) : <div className="worksEquipmentValue">{equipment ? equipLabel(equipment) : row.equipment || 'Без оборудования'}</div>}
+                              </div>
+                              <label className="worksRowQuantity">
+                                <span className="worksControlLabel">Количество</span>
+                                <input type="number" min="1" step="1" inputMode="numeric" value={row.amount} onChange={(e) => patchWork(row.id, { amount: Math.max(1, Number(e.target.value) || 1) })} aria-label={`Количество для работы ${index + 1}`} />
+                              </label>
+                              <div className="worksRowAmount">
+                                <span className="worksControlLabel">Цена · Сумма</span>
+                                <strong>{row.work_id ? money(row.price) + ' · ' + money(row.sum) : '—'}</strong>
+                              </div>
+                            </div>
+                            {!row.work_id && <p className={`worksRowHint ${validationErrors.works ? 'worksRowHintError' : ''}`}>{validationErrors.works ? 'Выберите работу по прейскуранту или удалите строку.' : 'Выберите прейскурант для этой строки; без него работа не войдёт в заявку.'}</p>}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="worksTotal">
+                    <span>Итого по выбранным работам</span>
+                    <strong>{money(invoiceWorks.filter((row) => row.work_id).reduce((sum, row) => sum + (Number(row.sum) || 0), 0))}</strong>
+                  </div>
+                </section>
               </div>
             )}
           </div>
 
           <div className="create-invoice-modal__footer">
+            {validationErrors.save && <p className="newInvoiceError newInvoiceSaveError" role="alert">{validationErrors.save}</p>}
             <div className="footer-buttons">
               <button
                 type="button"
@@ -1070,7 +1099,7 @@ export default function CreateInvoiceModal({
               >
                 {loading
                   ? (isEdit ? 'Сохраняю…' : 'Создаю…')
-                  : (isEdit ? 'Сохранить' : 'Создать')}
+                  : (isEdit ? 'Сохранить изменения' : 'Создать заявку')}
               </button>
             </div>
           </div>
@@ -1081,6 +1110,7 @@ export default function CreateInvoiceModal({
         isOpen={pickLicOpen}
         onClose={() => setPickLicOpen(false)}
         onSelect={handlePickLic}
+        contextClass={!isEdit ? 'create-invoice-lic-picker' : undefined}
       />
     </>
   );

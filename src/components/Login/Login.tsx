@@ -2,154 +2,133 @@ import React, { useState } from 'react';
 import './Login.css';
 import { useLogin } from './useLogin';
 
-// SVG Icons components for cleaner code
 const UserIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  <svg className="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+    <circle cx="12" cy="8" r="3.5" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
   </svg>
 );
 
 const LockIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+  <svg className="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+    <rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" />
   </svg>
 );
 
-const EyeIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-  </svg>
-);
-
-const EyeOffIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.05 10.05 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+const EyeIcon = ({ visible }: { visible: boolean }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+    <path d="M2.5 12s3.4-5.5 9.5-5.5 9.5 5.5 9.5 5.5-3.4 5.5-9.5 5.5S2.5 12 2.5 12Z" />
+    <circle cx="12" cy="12" r="2.5" />
+    {!visible && <path d="m4 20 16-16" />}
   </svg>
 );
 
 const Login: React.FC = () => {
   const { username, setUsername, password, setPassword, rememberMe, handleMemberMe, login, loading } = useLogin();
-  
-  // Локальный стейт только для отображения пароля (UX)
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = async () => {
-    login({ login: username, password });
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !loading) {
-      handleSubmit();
-    }
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (loading) return;
+    void login({ login: username, password });
   };
 
   return (
-    <div className="login-page">
-      {/* Левая часть - Визуал */}
-      <div className="login-visual-side">
-        <div className="visual-content">
-          <h1 className="visual-title">Энергия<br/>вашего успеха</h1>
-          <p className="visual-desc">
-            Единая цифровая платформа управления ресурсами АО «Сахатранснефтегаз».
-            Надежность, эффективность и безопасность.
-          </p>
-        </div>
-        <div className="visual-footer">
-          © {new Date().getFullYear()} Сахатранснефтегаз
-        </div>
-      </div>
+    <main className="inspector-login">
+      <header className="inspector-login-header">
+        <img className="inspector-brand-lockup" src="/assets/brand/stng-wordmark.png" alt="Саха Транснефтегаз" width="461" height="156" />
+        <span className="inspector-header-label">Мобильный инспектор <span aria-hidden="true">/</span> рабочий доступ</span>
+      </header>
 
-      {/* Правая часть - Форма */}
-      <div className="login-form-side">
-        <div className="login-wrapper">
-          <div className="login-header">
-            <span className="brand-logo-text">СТНГ • Вход</span>
-            <h2 className="login-title">С возвращением!</h2>
-            <p className="login-subtitle">Пожалуйста, введите свои данные для входа</p>
+      <div className="inspector-login-main">
+        <section className="inspector-login-intro" aria-label="О платформе">
+          <div className="inspector-login-visual" aria-hidden="true"><img src="/assets/auth/inspector-infrastructure.webp" alt="" width="1200" height="800" /></div>
+          <p className="inspector-intro-eyebrow stng-header-eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</p>
+          <h1 className="stng-header-title">Мобильный<br /> инспектор</h1>
+          <p className="inspector-intro-description stng-header-context">Заявки, лицевые счета и акты под рукой — на объекте и в офисе.</p>
+        </section>
+
+        <section className="inspector-auth-panel" aria-labelledby="login-title">
+          <div className="inspector-panel-topline stng-header-eyebrow">ДОСТУП К СИСТЕМЕ</div>
+          <div className="inspector-panel-heading">
+            <h2 id="login-title">Вход в систему</h2>
+            <p>Введите логин и пароль, чтобы продолжить.</p>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="username" className="form-label">
-              Логин или Email
-            </label>
-            <div className="input-wrapper">
-              <UserIcon />
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="form-input"
-                placeholder="user@example.com"
-                disabled={loading}
-                autoComplete="username"
-              />
+          <form className="inspector-login-form" onSubmit={handleSubmit} aria-busy={loading}>
+            <div className="auth-field">
+              <label htmlFor="username">Логин</label>
+              <div className="auth-input-wrap">
+                <UserIcon />
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="Введите логин"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  required
+                  disabled={loading}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">
-              Пароль
-            </label>
-            <div className="input-wrapper">
-              <LockIcon />
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="form-input"
-                placeholder="••••••••"
-                disabled={loading}
-                autoComplete="current-password"
-              />
-              <button 
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
+            <div className="auth-field">
+              <label htmlFor="password">Пароль</label>
+              <div className="auth-input-wrap">
+                <LockIcon />
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Введите пароль"
+                  autoComplete="current-password"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  className="auth-password-toggle"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                  aria-pressed={showPassword}
+                  disabled={loading}
+                >
+                  <EyeIcon visible={showPassword} />
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="form-options">
-            <label className="checkbox-label">
+            <label className="auth-remember">
               <input
                 type="checkbox"
+                name="remember"
                 checked={rememberMe}
-                onChange={(e) => handleMemberMe(e.target.checked)}
+                onChange={(event) => handleMemberMe(event.target.checked)}
                 disabled={loading}
               />
-              <span className="checkbox-custom"></span>
-              <span className="checkbox-text">Запомнить меня</span>
+              <span className="auth-remember-box" aria-hidden="true" />
+              <span>Запомнить меня</span>
             </label>
-            <a href="/forgot-password" className="forgot-password">
-              Забыли пароль?
-            </a>
-          </div>
 
-          <button
-            onClick={handleSubmit}
-            className={`login-button ${loading ? 'loading' : ''}`}
-            disabled={loading}
-          >
-            {loading ? 'Вход в систему...' : 'Войти'}
-          </button>
-
-          <div className="login-footer">
-            <p>Нет аккаунта? <a href="/register">Подать заявку</a></p>
-            <div className="support-block">
-              <p>Техподдержка: support@stng.ru | +7 (XXX) XXX-XX-XX</p>
-            </div>
-          </div>
-        </div>
+            <button className="auth-submit" type="submit" disabled={loading}>
+              <span>{loading ? 'Выполняется вход...' : 'Войти в систему'}</span>
+              {loading ? <span className="auth-submit-spinner" aria-hidden="true" /> : <span className="auth-submit-arrow" aria-hidden="true">→</span>}
+            </button>
+          </form>
+          <div className="inspector-panel-bottom">АО «Сахатранснефтегаз»</div>
+        </section>
       </div>
-    </div>
+
+      <footer className="inspector-login-footer">
+        <span>Республика Саха (Якутия)</span>
+        <span>© {new Date().getFullYear()} Сахатранснефтегаз</span>
+      </footer>
+    </main>
   );
 };
 

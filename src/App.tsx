@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { IonApp, IonRouterOutlet, IonSplitPane, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Redirect, Route } from 'react-router-dom';
@@ -18,12 +19,21 @@ import './theme/variables.css';
 import Login from './components/Login/Login';
 import { ToastProvider } from './components/Toast';
 import { useApp } from './useApp';
+import { useLoginStore } from './Store/loginStore';
 
 setupIonicReact();
 
 const AppContent: React.FC = () => {
   const { auth } = useApp();
+  const [sessionReady, setSessionReady] = useState(() => useLoginStore.persist.hasHydrated());
 
+  useEffect(() => {
+    const unsubscribe = useLoginStore.persist.onFinishHydration(() => setSessionReady(true));
+    if (useLoginStore.persist.hasHydrated()) setSessionReady(true);
+    return unsubscribe;
+  }, []);
+
+  if (!sessionReady) return <div className="app-session-loading" role="status">Восстанавливаем сессию…</div>;
   if (!auth) return <Login />;
 
   return (

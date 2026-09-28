@@ -273,20 +273,8 @@
 
 .bg-3 {
     background: var(--dop-color);
-    color: #3f64a9;     
+    color: var(--stng-brand-deep);
     border-radius: 5px;
-}
-
-.cl-green {
-    color: yellowgreen
-}
-
-.cl-red {
-    color: rgb(252, 173, 3)
-}
-
-.cl-yellow {
-    color: yellow
 }
 
 .cl-red1 {
@@ -325,13 +313,13 @@
     display: flex;
     width: 100vw;
     height: 100vh;
-    background: url("26785882.png") no-repeat center center/cover;
+    background: var(--stng-bg);
 }
 
 .a-container {
     width: 100vw;
     height: 100vh;
-    /* background: url("26785882.png") no-repeat center center/cover; */
+    /* background: var(--stng-bg); */
 }
 
 
@@ -388,11 +376,11 @@ meta[name="color-scheme"] {
 /* Отключаем CSS переменные темной темы */
 :root {
     color-scheme:                   light !important;
-    --ion-color-primary:            #086CA2 !important;
-    --ion-color-secondary:          #ffba00 !important;
-    --main-color:                   #086CA2; /* Основной цвет */
+    --ion-color-primary:            #0B7CB5 !important;
+    --ion-color-secondary:          #90DBD9 !important;
+    --main-color:                   #0B7CB5; /* Основной цвет */
     --background-color:             #f0f0f0; /* Фоновый цвет */
-    --dop-color:                    #ffba00;
+    --dop-color:                    #90DBD9;
 
 }
 
@@ -632,7 +620,7 @@ ion-modal.fullscreen {
 }
 
 ion-refresher {
-  --background: #086CA2; /* Прямое указание цвета */
+  --background: #0B7CB5; /* Прямое указание цвета */
   --color: white;
 }
 
@@ -699,3 +687,91 @@ html, body, #root {
   height: 100%;
   min-height: 100%;
 }
+/* Official STNG palette with digital tones derived from G5002/G5015/G5018. */
+:root {
+  --stng-brand-deep: #182E78;
+  --stng-brand-blue: #0B7CB5;
+  --stng-brand-mint: #90DBD9;
+  --stng-deep-hover: #233F91;
+  --stng-blue-hover: #096A9C;
+  --stng-bg: #F3F8FC;
+  --stng-bg-elevated: #E8F2F8;
+  --stng-surface: #FFFFFF;
+  --stng-surface-hover: #F7FBFD;
+  --stng-border: #C9DBE8;
+  --stng-text: #182E78;
+  --stng-text-muted: #526680;
+  --stng-primary: #0B7CB5;
+  --stng-primary-hover: #096A9C;
+  --stng-focus: #90DBD9;
+  --stng-dark-surface: #1D397E;
+  --stng-dark-surface-hover: #27488F;
+  --stng-dark-border: #5173A6;
+  --stng-text-on-dark: #FFFFFF;
+  --stng-muted-on-dark: #C5DCF0;
+  --stng-warning: #B25135;
+  --stng-danger: #B43F4F;
+  --stng-status-neutral-bg: #EEF3F7;
+  --stng-status-neutral-border: #BDCCD8;
+  --stng-status-neutral-text: #42566D;
+  --stng-status-new-bg: #EDF3F7;
+  --stng-status-new-border: #B8CBD8;
+  --stng-status-new-text: #36516B;
+  --stng-status-assigned-bg: #E8F2FA;
+  --stng-status-assigned-border: #A5C9E1;
+  --stng-status-assigned-text: #155E8D;
+  --stng-status-work-bg: #DCF2F5;
+  --stng-status-work-border: #85CBD2;
+  --stng-status-work-text: #096B79;
+  --stng-status-hold-bg: #FFF2E9;
+  --stng-status-hold-border: #E5B9A1;
+  --stng-status-hold-text: #96502F;
+  --stng-status-done-bg: #E7F5EE;
+  --stng-status-done-border: #9BCDB4;
+  --stng-status-done-text: #246B50;
+  --stng-shadow-action: 0 12px 28px rgba(11, 124, 181, 0.22);
+  --stng-radius-sm: 6px;
+  --stng-radius-md: 12px;
+  --stng-radius-lg: 18px;
+  --stng-space-1: 4px;
+  --stng-space-2: 8px;
+  --stng-space-3: 12px;
+  --stng-space-4: 16px;
+  --stng-space-6: 24px;
+  --stng-space-8: 32px;
+  --stng-motion-fast: 180ms ease;
+  --stng-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.app-session-loading { display: grid; place-items: center; min-height: 100vh; min-height: 100dvh; padding: 24px; background: var(--stng-brand-deep); color: white; font: 600 15px Inter, system-ui, sans-serif; }
+
+
+/* Shared heading rhythm for page titles, modal titles and branded entry screens. */
+.stng-header-eyebrow {
+  color: var(--stng-brand-blue);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .11em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+.stng-header-title { letter-spacing: -.03em; line-height: 1.18; }
+.stng-header-context { line-height: 1.45; }
+.stng-page-heading { gap: 20px; }
+.stng-modal-header { align-items: flex-start; gap: 16px; }
+.stng-header-stack { min-width: 0; }
+.stng-header-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--stng-border);
+  border-radius: var(--stng-radius-md);
+  background: var(--stng-surface);
+  color: var(--stng-text);
+  font-size: 22px;
+}
+.stng-header-close:hover { border-color: var(--stng-primary); background: var(--stng-surface-hover); }
+.stng-header-close:focus-visible { outline: 3px solid var(--stng-focus); outline-offset: 2px; }
+.stng-header-close:disabled { opacity: .48; cursor: not-allowed; }

@@ -30,11 +30,10 @@ export const useLoginStore = create<any>()(
         token: state.token,
         auth:  state.auth,
       }),
-      // Если есть token после F5 — считаем сессию живой
-      onRehydrateStorage: () => (state) => {
-        if (state?.token && !state.auth) {
-          state.auth = true;
-        }
+      // Restore auth in Zustand's merge step so subscribers receive the restored state.
+      merge: (persistedState, currentState) => {
+        const stored = (persistedState ?? {}) as Record<string, unknown>;
+        return { ...currentState, ...stored, auth: Boolean(stored.token) };
       },
     }
   )

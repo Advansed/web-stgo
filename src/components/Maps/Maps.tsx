@@ -1,190 +1,248 @@
-import React, { useEffect, useRef } from 'react';
-import './Maps.css'
+import React, { useEffect, useRef, useState } from 'react';
+import './Maps.css';
 import { Invoice } from '../Invoices/components/InvoiceList/InvoiceItem';
-import { useInvoices } from '../../Store/invoiceStore';
+import { invoiceAddress, invoiceStatus, isInvoiceOverdue } from '../Invoices/invoicePresentation';
 
 const YANDEX_MAP_API_KEY = import.meta.env.VITE_YANDEX_MAPS_KEY || 'f2f0a250-d1db-4754-a195-c4a7c1ba6602';
+const SCRIPT_ID = 'stng-yandex-maps-api';
+const DEFAULT_CENTER = [62.029585, 129.727358];
+const geocodeCache = new Map<string, number[]>();
+let apiPromise: Promise<any> | null = null;
+
+export type MapLoadState = 'loading' | 'ready' | 'error';
+export interface MapMetrics { source: number; plotted: number; pending: number; unlocated: number; }
 
 interface MapProps {
-  invoices?: Invoice[],
+  invoices: Invoice[];
+  selectedId?: string | null;
+  onSelectInvoice?: (invoice: Invoice) => void;
+  onStatusChange?: (status: MapLoadState) => void;
+  onMetricsChange?: (metrics: MapMetrics) => void;
+  fitRequest?: number;
+  zoomRequest?: { step: number; direction: 1 | -1 };
+  retryRequest?: number;
 }
 
-const geocodeCache = new Map<string, number[]>();
+const invoiceId = (invoice: Invoice) => String(invoice.id || (invoice as any).Ссылка || '');
+const validCoords = (latValue: unknown, lonValue: unknown): number[] | null => {
+  if (latValue === null || latValue === undefined || latValue === '' || lonValue === null || lonValue === undefined || lonValue === '') return null;
+  const lat = Number(latValue);
+  const lon = Number(lonValue);
+  return Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && (lat !== 0 || lon !== 0) ? [lat, lon] : null;
+};
+const invoiceCoords = (invoice: Invoice): number[] | null => {
+  const address = typeof invoice.address === 'object' ? invoice.address : null;
+  return validCoords(address?.lat ?? (address as any)?.Lat, address?.lon ?? (address as any)?.Lon)
+    || validCoords((invoice as any).lat, (invoice as any).lon);
+};
 
-function buildBalloonHTML(order: any) {
-  const addrText = typeof order.address === 'string'
-    ? order.address
-    : (order.address?.address || 'Адрес не указан');
-  const applicant = order.applicant || '—';
-  const lic = order.lic || '—';
-  const description = order.description || order.service || '';
+const svgData = (svg: string) => 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+const markerIcon = (invoice: Invoice, selected: boolean, today: string) => {
+  const overdue = isInvoiceOverdue(invoice, today);
+  const completed = invoiceStatus(invoice).completed;
+  const fill = overdue ? '#B34445' : completed ? '#4C7891' : '#0B7CB5';
+  const sign = overdue
+    ? '<path d="M20 13v9m0 4h.01" stroke="white" stroke-width="3" stroke-linecap="round"/>'
+    : completed
+      ? '<path d="m14 20 4 4 8-9" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
+      : '<circle cx="20" cy="20" r="4" fill="white"/>';
+  return svgData(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="48" viewBox="0 0 40 48"><path d="M20 2C10.1 2 2 10.1 2 20c0 13 18 26 18 26s18-13 18-26C38 10.1 29.9 2 20 2Z" fill="${fill}" stroke="${selected ? '#182E78' : '#FFFFFF'}" stroke-width="${selected ? 4 : 2.5}"/><circle cx="20" cy="20" r="11.5" fill="${fill}" stroke="${selected ? '#90DBD9' : '#FFFFFF'}" stroke-width="${selected ? 3 : 2}"/>${sign}</svg>`);
+};
 
-  let dateStr = '—';
-  try {
-    const d = new Date(order.date || order.Дата);
-    dateStr = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-  } catch { /* ignore */ }
+const clusterIcon = svgData('<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="#182E78" stroke="#90DBD9" stroke-width="4"/></svg>');
 
-  const balloonHTML = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-width: 260px; max-width: 300px; padding: 4px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <span style="background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;">#${order.number || ''}</span>
-        <span style="color: #94a3b8; font-size: 12px; font-weight: 500;">${dateStr}</span>
-      </div>
-      ${description ? `<div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 10px; line-height: 1.4;">${description}</div>` : ''}
-      <div style="font-size: 13px; color: #334155; margin-bottom: 10px; line-height: 1.4;">${addrText}</div>
-      <div style="display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;">
-        <div style="font-size: 12px; color: #64748b;">Заявитель: <span style="color: #334155; font-weight: 600;">${applicant}</span></div>
-        <div style="font-size: 12px; color: #64748b;">ЛС: <span style="color: #334155; font-weight: 600;">${lic}</span></div>
-      </div>
-    </div>
-  `;
-
-  return { balloonHTML, addrText, preset: 'islands#blueDotIcon' };
+function loadYandexMaps(): Promise<any> {
+  if ((window as any).ymaps) return Promise.resolve((window as any).ymaps);
+  if (apiPromise) return apiPromise;
+  apiPromise = new Promise((resolve, reject) => {
+    document.getElementById(SCRIPT_ID)?.remove();
+    const script = document.createElement('script');
+    script.id = SCRIPT_ID;
+    script.src = `https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=${YANDEX_MAP_API_KEY}`;
+    script.async = true;
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      if (error) { script.remove(); apiPromise = null; reject(error); }
+      else resolve((window as any).ymaps);
+    };
+    const timer = window.setTimeout(() => finish(new Error('Yandex Maps timed out')), 16000);
+    script.onerror = () => finish(new Error('Yandex Maps failed to load'));
+    script.onload = () => {
+      const ymaps = (window as any).ymaps;
+      if (!ymaps?.ready) return finish(new Error('Yandex Maps did not initialize'));
+      ymaps.ready(() => finish());
+    };
+    document.body.appendChild(script);
+  });
+  return apiPromise;
 }
 
-function getOrderCoords(order: any): number[] | null {
-  let lat = 0, lon = 0;
-  if (order.address && typeof order.address === 'object') {
-    lat = Number(order.address.lat || order.address.Lat || 0);
-    lon = Number(order.address.lon || order.address.Lon || 0);
-  }
-  if (lat === 0) {
-    lat = Number(order.lat || 0);
-    lon = Number(order.lon || 0);
-  }
-  if (lat !== 0 && lon !== 0 && !isNaN(lat)) return [lat, lon];
-  return null;
-}
-
-const MapComponent: React.FC<MapProps> = ({ invoices: propInvoices }) => {
+const MapComponent: React.FC<MapProps> = ({
+  invoices, selectedId, onSelectInvoice, onStatusChange, onMetricsChange,
+  fitRequest = 0, zoomRequest, retryRequest = 0,
+}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const clustererRef = useRef<any>(null);
-  const posRef = useRef([62.029585, 129.727358]);
+  const placemarksRef = useRef(new Map<string, any>());
+  const invoicesRef = useRef(invoices);
+  const selectedIdRef = useRef(selectedId);
+  const selectRef = useRef(onSelectInvoice);
+  const statusRef = useRef(onStatusChange);
+  const metricsRef = useRef(onMetricsChange);
+  const generationRef = useRef(0);
+  const initialFitRef = useRef(false);
+  const visibleOnceRef = useRef(false);
+  const [mapVersion, setMapVersion] = useState(0);
 
-  const { data: storeInvoices } = useInvoices();
-  const invoices = (propInvoices && propInvoices.length > 0) ? propInvoices : storeInvoices;
+  invoicesRef.current = invoices;
+  selectedIdRef.current = selectedId;
+  selectRef.current = onSelectInvoice;
+  statusRef.current = onStatusChange;
+  metricsRef.current = onMetricsChange;
 
-  // Инициализация карты один раз
-  useEffect(() => {
-    let observer: ResizeObserver | null = null;
-    let destroyed = false;
-
-    const initMap = () => {
-      if (destroyed || !mapRef.current || mapInstanceRef.current) return;
-      const ymaps = (window as any).ymaps;
-
-      mapInstanceRef.current = new ymaps.Map(mapRef.current, {
-        center: posRef.current,
-        zoom: 12,
-        controls: ['zoomControl', 'fullscreenControl']
-      });
-
-      clustererRef.current = new ymaps.Clusterer({
-        preset: 'islands#invertedVioletClusterIcons',
-        groupByCoordinates: false,
-        clusterDisableClickZoom: false,
-        clusterHideIconOnBalloonOpen: false,
-        geoObjectHideIconOnBalloonOpen: false
-      });
-
-      mapInstanceRef.current.geoObjects.add(clustererRef.current);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (p) => {
-            posRef.current = [p.coords.latitude, p.coords.longitude];
-            mapInstanceRef.current?.setCenter(posRef.current);
-          },
-          () => {},
-          { enableHighAccuracy: true }
-        );
-      }
-
-      const div = containerRef.current;
-      if (div) {
-        observer = new ResizeObserver(() => mapInstanceRef.current?.container.fitToViewport());
-        observer.observe(div);
-      }
-    };
-
-    const ymaps = (window as any).ymaps;
-    if (ymaps) {
-      ymaps.ready(initMap);
-    } else {
-      const script = document.createElement('script');
-      script.src = `https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=${YANDEX_MAP_API_KEY}`;
-      script.type = 'text/javascript';
-      script.async = true;
-      script.onload = () => (window as any).ymaps.ready(initMap);
-      document.body.appendChild(script);
+  const fitMarkers = () => {
+    const map = mapInstanceRef.current;
+    const clusterer = clustererRef.current;
+    const objects = clusterer?.getGeoObjects() || [];
+    if (!map || !objects.length || !containerRef.current?.offsetWidth) return;
+    if (objects.length === 1) map.setCenter(objects[0].geometry.getCoordinates(), 14, { duration: 0 });
+    else {
+      const bounds = clusterer.getBounds();
+      if (bounds) map.setBounds(bounds, { checkZoomRange: true, zoomMargin: 55, duration: 0 });
     }
+  };
 
-    return () => {
-      destroyed = true;
-      if (observer) observer.disconnect();
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.destroy();
-        mapInstanceRef.current = null;
-        clustererRef.current = null;
+  useEffect(() => {
+    let cancelled = false;
+    let observer: ResizeObserver | null = null;
+    statusRef.current?.('loading');
+    loadYandexMaps().then((ymaps) => {
+      if (cancelled || !mapRef.current) return;
+      try {
+        const map = new ymaps.Map(mapRef.current, {
+          center: DEFAULT_CENTER, zoom: 11, controls: [],
+        }, { suppressMapOpenBlock: true });
+        const clusterer = new ymaps.Clusterer({
+          clusterIcons: [{ href: clusterIcon, size: [52, 52], offset: [-26, -26] }],
+          clusterNumbers: [],
+          clusterIconContentLayout: ymaps.templateLayoutFactory.createClass('<div class="stng-map-cluster-count">{{ properties.geoObjects.length }}</div>'),
+          clusterDisableClickZoom: false,
+          clusterOpenBalloonOnClick: false,
+          groupByCoordinates: false,
+        });
+        map.geoObjects.add(clusterer);
+        mapInstanceRef.current = map;
+        clustererRef.current = clusterer;
+        observer = new ResizeObserver(() => {
+          if (!containerRef.current?.offsetWidth) return;
+          map.container.fitToViewport();
+          if (!visibleOnceRef.current) { visibleOnceRef.current = true; if (initialFitRef.current) fitMarkers(); }
+        });
+        if (containerRef.current) observer.observe(containerRef.current);
+        statusRef.current?.('ready');
+        setMapVersion((value) => value + 1);
+      } catch {
+        statusRef.current?.('error');
       }
+    }).catch(() => { if (!cancelled) statusRef.current?.('error'); });
+    return () => {
+      cancelled = true;
+      generationRef.current++;
+      observer?.disconnect();
+      mapInstanceRef.current?.destroy();
+      mapInstanceRef.current = null;
+      clustererRef.current = null;
+      placemarksRef.current.clear();
     };
-  }, []);
+  }, [retryRequest]);
 
-  // Инкрементальное обновление меток при смене списка
+  // invoices is the same filtered array used by the list. An empty array must stay empty.
   useEffect(() => {
     const ymaps = (window as any).ymaps;
     const clusterer = clustererRef.current;
     if (!ymaps || !clusterer) return;
-
+    const generation = ++generationRef.current;
     clusterer.removeAll();
-
-    (invoices || []).forEach((order: any) => {
-      const { balloonHTML, preset, addrText } = buildBalloonHTML(order);
-      if (!addrText || addrText.length < 5 || addrText === 'Адрес не указан') return;
-
-      const createPlacemark = (coords: number[]) =>
-        new ymaps.Placemark(
-          coords,
-          {
-            hintContent: `№${order.number}`,
-            balloonContent: balloonHTML,
-            iconCaption: order.number
-          },
-          { preset }
-        );
-
-      const coords = getOrderCoords(order);
-      if (coords) {
-        clusterer.add(createPlacemark(coords));
-        return;
-      }
-
-      const cached = geocodeCache.get(addrText);
-      if (cached) {
-        clusterer.add(createPlacemark(cached));
-        return;
-      }
-      ymaps.geocode(addrText).then((res: any) => {
-        const obj = res.geoObjects.get(0);
-        if (obj && clustererRef.current) {
-          const c = obj.geometry.getCoordinates();
-          geocodeCache.set(addrText, c);
-          clustererRef.current.add(createPlacemark(c));
-        }
-      }).catch(() => {});
+    placemarksRef.current.clear();
+    const today = new Date().toLocaleDateString('sv-SE');
+    const metrics: MapMetrics = { source: invoices.length, plotted: 0, pending: 0, unlocated: 0 };
+    const publish = () => metricsRef.current?.({ ...metrics });
+    const addMarker = (invoice: Invoice, coords: number[]) => {
+      if (generation !== generationRef.current) return;
+      const id = invoiceId(invoice);
+      const selected = id === selectedIdRef.current;
+      const placemark = new ymaps.Placemark(coords, {
+        hintContent: `Заявка №${invoice.number || 'без номера'} · ${invoiceStatus(invoice).label}`,
+      }, {
+        iconLayout: 'default#image',
+        iconImageHref: markerIcon(invoice, selected, today),
+        iconImageSize: [40, 48],
+        iconImageOffset: [-20, -48],
+        openBalloonOnClick: false,
+      });
+      placemark.events.add('click', () => selectRef.current?.(invoice));
+      clusterer.add(placemark);
+      placemarksRef.current.set(id, placemark);
+      metrics.plotted++;
+      publish();
+    };
+    const geocodes: Promise<void>[] = [];
+    invoices.forEach((invoice) => {
+      const coords = invoiceCoords(invoice);
+      if (coords) { addMarker(invoice, coords); return; }
+      const address = invoiceAddress(invoice);
+      if (address === 'Адрес не указан' || address.length < 5) { metrics.unlocated++; return; }
+      const cached = geocodeCache.get(address);
+      if (cached) { addMarker(invoice, cached); return; }
+      metrics.pending++;
+      geocodes.push(Promise.resolve(ymaps.geocode(address)).then((result: any) => {
+        if (generation !== generationRef.current) return;
+        const raw = result.geoObjects.get(0)?.geometry?.getCoordinates?.();
+        const found = validCoords(raw?.[0], raw?.[1]);
+        if (found) { geocodeCache.set(address, found); addMarker(invoice, found); }
+        else metrics.unlocated++;
+      }).catch(() => { if (generation === generationRef.current) metrics.unlocated++; })
+        .finally(() => { if (generation === generationRef.current) { metrics.pending--; publish(); } }));
     });
-  }, [invoices]);
+    publish();
+    Promise.allSettled(geocodes).then(() => {
+      if (generation !== generationRef.current || initialFitRef.current) return;
+      initialFitRef.current = true;
+      fitMarkers();
+    });
+    return () => { generationRef.current++; };
+  }, [invoices, mapVersion]);
 
-  return (
-    <div ref={containerRef} className='map-container'>
-      <div style={{ width: '100%', height: '100%' }}>
-        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-      </div>
-    </div>
-  );
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+    const today = new Date().toLocaleDateString('sv-SE');
+    placemarksRef.current.forEach((placemark, id) => {
+      const invoice = invoicesRef.current.find((item) => invoiceId(item) === id);
+      if (!invoice) return;
+      const active = id === selectedId;
+      placemark.options.set('iconImageHref', markerIcon(invoice, active, today));
+      placemark.options.set('zIndex', active ? 2000 : 0);
+      if (active && mapInstanceRef.current) mapInstanceRef.current.panTo(placemark.geometry.getCoordinates(), { duration: 180 });
+    });
+  }, [selectedId]);
+
+  useEffect(() => { if (fitRequest > 0) fitMarkers(); }, [fitRequest]);
+
+  useEffect(() => {
+    if (zoomRequest?.step && mapInstanceRef.current) {
+      const map = mapInstanceRef.current;
+      map.setZoom(map.getZoom() + zoomRequest.direction, { duration: 160 });
+    }
+  }, [zoomRequest?.step]);
+
+  return <div ref={containerRef} className="map-container">
+    <div ref={mapRef} className="map-inner" role="region" aria-label="Карта расположения заявок" />
+  </div>;
 };
 
 export default MapComponent;

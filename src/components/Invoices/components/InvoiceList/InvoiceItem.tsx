@@ -1,15 +1,14 @@
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { calendarOutline, locationOutline } from 'ionicons/icons';
+import { alertCircleOutline, arrowForwardOutline, calendarOutline, locationOutline, personOutline } from 'ionicons/icons';
+import { formatDeadline, invoiceAddress, invoiceStatus, isInvoiceOverdue } from '../../invoicePresentation';
 import styles from './InvoiceItem.module.css';
 
 export interface InvoiceWork {
   id: string;
   equip_id?: string;
   work_id?: string;
-  /** наименование оборудования */
   equipment?: string;
-  /** наименование работы */
   work?: string;
   amount: number;
   price: number;
@@ -23,6 +22,8 @@ export interface Invoice {
   serv_id?: string;
   number: string;
   date: string;
+  plan_date?: string;
+  complete_date?: string;
   description?: string;
   comment?: string;
   lic?: string;
@@ -38,96 +39,50 @@ export interface Invoice {
   phone?: string | null;
 }
 
-interface InvoiceStatus { color: string; text: string; }
 interface InvoiceItemProps {
   invoice: Invoice;
-  status?: InvoiceStatus;
   onSelect: (invoice: Invoice) => void;
-  onCall?: (phone: any, event: any) => void;
-  formatDate: (dateString: string) => string;
-  formatPhone?: (phone: string) => string;
   isSelected?: boolean;
+  today: string;
 }
 
-const STATUS_CLASS: Record<string, string> = {
-  'новый': 'statusNew',
-  'новая': 'statusNew',
-  'назначен': 'statusAssigned',
-  'назначена': 'statusAssigned',
-  'в работе': 'statusInProgress',
-  'отложен': 'statusOnHold',
-  'отложена': 'statusOnHold',
-  'завершен': 'statusCompleted',
-  'завершена': 'statusCompleted',
-  'выполнена': 'statusCompleted',
-  'отменена': 'statusRejected',
-};
-
-const statusClassName = (status: string) =>
-  styles[STATUS_CLASS[status.toLowerCase()]] || styles.statusNew;
-
-const InvoiceItem: React.FC<InvoiceItemProps> = ({
-  invoice,
-  onSelect,
-  formatDate,
-  isSelected
-}) => {
-  const safeInvoice = invoice as any;
-  const works: InvoiceWork[] = Array.isArray(safeInvoice.works) ? safeInvoice.works : [];
-
-  const getDisplayAddress = () => {
-    const addr = safeInvoice.address;
-    if (!addr) return 'Адрес не указан';
-    if (typeof addr === 'string') return addr;
-    if (addr.address) return addr.address;
-    return 'Адрес не указан';
-  };
-
-  const description = safeInvoice.description || safeInvoice.service || '';
-  const applicant = safeInvoice.applicant || '';
-  const worksCount = works.length;
-  const statusText = String(safeInvoice.status || safeInvoice.Статус || 'Новый').trim() || 'Новый';
+const InvoiceItem: React.FC<InvoiceItemProps> = ({ invoice, onSelect, isSelected, today }) => {
+  const status = invoiceStatus(invoice);
+  const overdue = isInvoiceOverdue(invoice, today);
+  const number = String(invoice.number || (invoice as any).Номер || 'Без номера');
+  const address = invoiceAddress(invoice);
+  const description = String(invoice.description || invoice.service || '').trim();
+  const worker = invoice.worker?.name?.trim();
 
   return (
-    <div
-      className={`${styles.invoiceCard} ${isSelected ? styles.cardSelected : ''} ${statusClassName(statusText)}`}
+    <button
+      type="button"
+      className={`${styles.invoiceCard} ${styles[status.tone]} ${overdue ? styles.overdue : ''} ${isSelected ? styles.selected : ''}`}
       onClick={() => onSelect(invoice)}
+      aria-label={`Открыть заявку № ${number}. ${status.label}. ${address}`}
     >
-      <div className={styles.cardHeader}>
-        <div className={styles.headerLeft}>
-          <span className={styles.number}>#{safeInvoice.number || safeInvoice.Номер}</span>
-          <div className={styles.date}>
-            <IonIcon icon={calendarOutline} style={{ fontSize: '12px' }} />
-            {formatDate(safeInvoice.date || safeInvoice.Дата)}
-          </div>
-        </div>
+      <span className={styles.cardTop}>
+        <span className={styles.number}>№ {number}</span>
+        <span className={`${styles.statusBadge} ${styles[status.tone]}`}>{status.label}</span>
+      </span>
 
-        <div className={styles.headerRight}>
-          <span className={styles.statusBadge}>{statusText}</span>
-          {worksCount > 1 && (
-            <span className={styles.worksBadge}>{worksCount} работ</span>
-          )}
-        </div>
-      </div>
+      <span className={styles.address}>
+        <IonIcon icon={locationOutline} aria-hidden="true" />
+        <span>{address}</span>
+      </span>
 
-      {description && (
-        <div className={styles.applicant} style={{ fontWeight: 600, color: '#1e293b' }}>
-          {description}
-        </div>
-      )}
+      {description && <span className={styles.description}>{description}</span>}
 
-      <div className={styles.address}>
-        <IonIcon icon={locationOutline} style={{ fontSize: '14px', marginRight: 6, color: '#94a3b8', flexShrink: 0 }} />
-        <span className={styles.addressText}>{getDisplayAddress()}</span>
-      </div>
-
-      {applicant && (
-        <div className={styles.applicant}>
-          {applicant}
-        </div>
-      )}
-    </div>
+      <span className={styles.cardBottom}>
+        <span className={`${styles.deadline} ${overdue ? styles.deadlineOverdue : ''}`}>
+          <IonIcon icon={overdue ? alertCircleOutline : calendarOutline} aria-hidden="true" />
+          <span>{invoice.plan_date ? (overdue ? 'Просрочено: ' : 'Срок: ') : ''}{formatDeadline(invoice.plan_date)}</span>
+        </span>
+        {worker && <span className={styles.worker}><IonIcon icon={personOutline} aria-hidden="true" /><span>{worker}</span></span>}
+        <IonIcon className={styles.openIcon} icon={arrowForwardOutline} aria-hidden="true" />
+      </span>
+    </button>
   );
 };
 
-export default InvoiceItem;
+export default React.memo(InvoiceItem);
