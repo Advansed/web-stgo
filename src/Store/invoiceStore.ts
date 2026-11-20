@@ -70,6 +70,7 @@ interface InvoicesStore {
   setLoading:                 (loading: boolean) => void;
   updateItem:                 (updates: Partial<any>) => void;
   loadInvoices:               (token: string, force?: boolean) => Promise<any>;
+  applyRemoteInvoices:        (res: any) => void;
   assignWorker:               (token: string, invoiceId: string, workerObj: any) => Promise<any>;
 }
 
@@ -105,14 +106,13 @@ export const useInvoicesStore = create<InvoicesStore>()(
           set({ loading: true, error: null });
           try {
             const res = await getInvoices(token);
-            const parsed = parseJsonDataField(res);
-            if (isApiOk(parsed) || parsed.success || isApiOk(res) || res.success) {
-              const clean = asInvoiceList(parsed.data ?? res.data).map(normalizeInvoice);
-              set({ data: clean, loading: false, loaded: true, error: null });
+            const read = readInvoiceList(res);
+            if (read.ok) {
+              set({ data: read.list, loading: false, loaded: true, error: null });
             } else {
-              set({ loading: false, error: String(parsed.message || res.message || 'Проверьте соединение и повторите попытку.') });
+              set({ loading: false, error: String(read.parsed.message || res.message || 'Проверьте соединение и повторите попытку.') });
             }
-            return parsed.success !== undefined ? parsed : res;
+            return read.parsed.success !== undefined ? read.parsed : res;
           } catch (e) {
             console.error(e);
             set({ loading: false, error: 'Проверьте соединение и повторите попытку.' });
@@ -123,6 +123,12 @@ export const useInvoicesStore = create<InvoicesStore>()(
           }
         })();
         return loadInvoicesInFlight;
+      },
+
+      applyRemoteInvoices:    (res) => {
+        const read = readInvoiceList(res);
+        if (!read.ok) return;
+        set({ data: read.list, loaded: true, error: null });
       },
 
       assignWorker:           async (token, invoiceId, workerObj) => {
@@ -521,5 +527,15 @@ const normalizeInvoice        = (inv: any) => {
     works,
     primaryWork: works[0] || null,
     service: description,
+  };
+};
+
+const readInvoiceList = (res: any): { ok: boolean; list: any[]; parsed: any } => {
+  const parsed = parseJsonDataField(res);
+  const ok = Boolean(isApiOk(parsed) || parsed.success || isApiOk(res) || res?.success);
+  return {
+    ok,
+    list: ok ? asInvoiceList(parsed.data ?? res?.data).map(normalizeInvoice) : [],
+    parsed,
   };
 };

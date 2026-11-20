@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { IonModal, IonIcon, IonSpinner } from '@ionic/react';
 import { closeOutline, searchOutline, locationOutline, keypadOutline, addOutline, personOutline, checkmarkCircleOutline } from 'ionicons/icons';
-import { useLics } from './useFindLics';
+import { useAddressSearch } from './useFindLics';
 import type { DropdownOption } from './useFindLics';
-import { getLic } from '../../../../Store/api';
+import { FoundLicByAddress, getLic } from '../../../../Store/api';
 import { useToken } from '../../../../Store/loginStore';
 import { formatAddress } from '../../../../utils/format';
 import './FindLics.css';
@@ -37,20 +37,20 @@ const FindLics: React.FC<LicsFormProps> = ({
 }) => {
     const [mode, setMode] = useState<SearchMode>('code');
     const {
-        uluses, settlements, streets, houses, kv, lics, loading, error,
-        loadedUluses, loadedStreets, loadedHouses,
-        loadUluses, loadSettlements, loadStreets, loadHouses, loadKv, loadLics,
-    } = useLics(isOpen && mode === 'address');
+        plotOptions, selectedPlot, plotsLoading, plotsError, setPlot,
+        address: addressQuery, setAddress, results, searching, searchError, searched, loadPlots,
+    } = useAddressSearch(isOpen && mode === 'address');
 
     const { token } = useToken();
 
     const [codeInput, setCodeInput] = useState('');
     const [searchingCode, setSearchingCode] = useState(false);
+    const [openingCode, setOpeningCode] = useState('');
     const [addingLic, setAddingLic] = useState(false);
     const [codeError, setCodeError] = useState('');
     const [foundLic, setFoundLic] = useState<FoundLic | null>(null);
-    const [selected, setSelected] = useState<Partial<Record<'ulus' | 'settle' | 'street' | 'house' | 'kv', DropdownOption>>>({});
     const searchId = useRef(0);
+    const openId = useRef(0);
     const contentRef = useRef<HTMLDivElement>(null);
     const resultRef = useRef<HTMLDivElement>(null);
     const accountsRef = useRef<HTMLDivElement>(null);
@@ -63,8 +63,9 @@ const FindLics: React.FC<LicsFormProps> = ({
             setFoundLic(null);
             setCodeError('');
             setSearchingCode(false);
+            setOpeningCode('');
+            openId.current += 1;
             setAddingLic(false);
-            setSelected({});
         }
     }, [isOpen]);
 
@@ -127,71 +128,41 @@ const FindLics: React.FC<LicsFormProps> = ({
         }
     }, [foundLic, addingLic, onSelect, onClose]);
 
-    const addressTrail = [selected.ulus, selected.settle, selected.street, selected.house, selected.kv]
-        .filter(Boolean).map((item) => item!.name).join(' → ');
-
-    const handleAddressSelect = useCallback((item: DropdownOption) => {
-        setFoundLic(null);
-        setCodeError('');
-        switch (item.type) {
-            case 'ulus':
-                setSelected({ ulus: item });
-                loadSettlements(item.items || []);
-                break;
-            case 'settle':
-                setSelected((current) => ({ ulus: current.ulus, settle: item }));
-                void loadStreets(String(item.id));
-                break;
-            case 'street':
-                setSelected((current) => ({ ulus: current.ulus, settle: current.settle, street: item }));
-                void loadHouses(String(item.id));
-                break;
-            case 'house':
-            case 'build':
-                setSelected((current) => ({ ulus: current.ulus, settle: current.settle, street: current.street, house: item }));
-                if (item.type === 'house') loadLics(item.items || []);
-                else loadKv(item.items || []);
-                break;
-            case 'kv':
-                setSelected((current) => ({ ...current, kv: item }));
-                loadLics(item.items || []);
-                break;
+    const chooseHit = useCallback(async (hit: FoundLicByAddress) => {
+        if (!token) {
+            setCodeError('Сессия завершена. Войдите снова.');
+            return;
         }
-    }, [loadSettlements, loadStreets, loadHouses, loadKv, loadLics]);
-
-    const clearAddressFrom = useCallback((level: 'ulus' | 'settle' | 'street' | 'house' | 'kv') => {
+        const current = ++openId.current;
+        setOpeningCode(hit.code);
         setFoundLic(null);
         setCodeError('');
-        setSelected((current) => {
-            if (level === 'ulus') return {};
-            if (level === 'settle') return { ulus: current.ulus };
-            if (level === 'street') return { ulus: current.ulus, settle: current.settle };
-            if (level === 'house') return { ulus: current.ulus, settle: current.settle, street: current.street };
-            return { ulus: current.ulus, settle: current.settle, street: current.street, house: current.house };
-        });
-    }, []);
+        try {
+            const res = await getLic(token, hit.code);
+            if (current !== openId.current) return;
+            const data = res.data;
+            if (res.ok && data?.id !== undefined && data?.id !== null) {
+                const recordAddress = typeof data.address === 'string' ? data.address : (data.address?.address || '');
+                setFoundLic({
+                    id: String(data.id),
+                    code: String(data.code || hit.code),
+                    name: data.name || data.applicant || '',
+                    address: recordAddress || hit.address_go,
+                });
+            } else {
+                setCodeError(res?.message || 'Лицевой счёт не найден. Проверьте код и попробуйте снова.');
+            }
+        } catch {
+            if (current === openId.current) setCodeError('Не удалось открыть лицевой счёт. Проверьте соединение.');
+        } finally {
+            if (current === openId.current) setOpeningCode('');
+        }
+    }, [token]);
 
-    useEffect(() => {
-        if (mode !== 'address' || lics.length !== 1 || !(selected.house?.type === 'house' || selected.kv)) return;
-        const option = lics[0];
-        const record = option.record || {};
-        setFoundLic({
-            id: String(record.id ?? option.id),
-            code: String(record.code ?? option.name),
-            name: record.name || record.applicant || record.fio || record.abonent || '',
-            address: typeof record.address === 'string' ? record.address : (record.address?.address || addressTrail),
-        });
-    }, [mode, lics, selected.house, selected.kv, addressTrail]);
-
-    const chooseAccount = (option: DropdownOption) => {
-        const record = option.record || {};
+    const selectPlot = (item: DropdownOption) => {
+        setPlot(String(item.name));
+        setFoundLic(null);
         setCodeError('');
-        setFoundLic({
-            id: String(record.id ?? option.id),
-            code: String(record.code ?? option.name),
-            name: record.name || record.applicant || record.fio || record.abonent || '',
-            address: typeof record.address === 'string' ? record.address : (record.address?.address || addressTrail),
-        });
     };
 
     const revealInModal = useCallback((target: HTMLElement | null, alignTop = false) => {
@@ -220,10 +191,10 @@ const FindLics: React.FC<LicsFormProps> = ({
     }, [mode, foundLic, revealInModal]);
 
     useEffect(() => {
-        if (mode !== 'address' || lics.length < 2 || !(selected.house?.type === 'house' || selected.kv)) return;
+        if (mode !== 'address' || results.length < 1) return;
         const frame = requestAnimationFrame(() => revealInModal(accountsRef.current, true));
         return () => cancelAnimationFrame(frame);
-    }, [mode, lics, selected.house, selected.kv, revealInModal]);
+    }, [mode, results, revealInModal]);
 
     const foundCard = foundLic ? (
         <div ref={resultRef} className="found-lic-card" aria-label="Найденный лицевой счёт">
@@ -292,7 +263,7 @@ const FindLics: React.FC<LicsFormProps> = ({
                         type="button"
                         className={`find-lics-tab ${mode === 'address' ? 'active' : ''}`}
                         aria-pressed={mode === 'address'}
-                        onClick={() => { searchId.current += 1; setSearchingCode(false); setMode('address'); setSelected({}); setFoundLic(null); setCodeError(''); }}
+                        onClick={() => { searchId.current += 1; openId.current += 1; setSearchingCode(false); setOpeningCode(''); setMode('address'); setFoundLic(null); setCodeError(''); }}
                     >
                         <IonIcon icon={locationOutline} />
                         По адресу
@@ -351,63 +322,44 @@ const FindLics: React.FC<LicsFormProps> = ({
                         <div className="find-by-address-layout">
                             <div className="info-crumb-box">
                                 <IonIcon icon={locationOutline} className="info-crumb-icon" />
-                                <span>{addressTrail || 'Выберите район или улус'}</span>
+                                <span>{[selectedPlot?.name, addressQuery.trim()].filter(Boolean).join(' · ') || 'Выберите участок и введите адрес'}</span>
                             </div>
 
                             <div className="lics-level-container">
-                                <label className="lics-level-label">Район / Улус</label>
-                                <DropdownFilter label="Район / Улус" options={uluses} selected={selected.ulus}
-                                    onSelect={handleAddressSelect} onClear={() => clearAddressFrom('ulus')}
-                                    loading={loading === 'ulus'} disabled={loading === 'ulus'}
-                                    placeholder={loading === 'ulus' ? 'Загружаем районы…' : 'Выберите район или улус'} />
-                                {error === 'ulus' && <div className="address-level-error" role="alert">Не удалось загрузить список. <button type="button" onClick={() => void loadUluses()}>Повторить</button></div>}
-                                {loadedUluses && !error && !uluses.length && <div className="address-level-empty">Ничего не найдено</div>}
+                                <label className="lics-level-label">Участок</label>
+                                <DropdownFilter label="Участок" options={plotOptions} selected={selectedPlot}
+                                    onSelect={selectPlot} onClear={() => { setPlot(''); setFoundLic(null); setCodeError(''); }}
+                                    loading={plotsLoading} disabled={plotsLoading}
+                                    placeholder={plotsLoading ? 'Загружаем участки…' : 'Выберите участок'} />
+                                {plotsError && <div className="address-level-error" role="alert">Не удалось загрузить участки. <button type="button" onClick={() => void loadPlots()}>Повторить</button></div>}
+                                {!plotsLoading && !plotsError && !plotOptions.length && <div className="address-level-empty">Участки не найдены</div>}
                             </div>
 
                             <div className="lics-level-container">
-                                <label className="lics-level-label">Населённый пункт</label>
-                                <DropdownFilter label="Населённый пункт" options={settlements} selected={selected.settle}
-                                    onSelect={handleAddressSelect} onClear={() => clearAddressFrom('settle')}
-                                    disabled={!selected.ulus} placeholder="Выберите населённый пункт" />
-                                {selected.ulus && !settlements.length && <div className="address-level-empty">Ничего не найдено</div>}
+                                <label className="lics-level-label" htmlFor="find-lic-address">Адрес</label>
+                                <input
+                                    id="find-lic-address"
+                                    type="search"
+                                    className="find-by-code-input"
+                                    value={addressQuery}
+                                    onChange={(event) => { setAddress(event.target.value); setFoundLic(null); setCodeError(''); }}
+                                    placeholder="Например, Ленина 154 7"
+                                    autoComplete="off"
+                                    disabled={!selectedPlot}
+                                />
                             </div>
 
-                            <div className="lics-level-container">
-                                <label className="lics-level-label">Улица</label>
-                                <DropdownFilter label="Улица" options={streets} selected={selected.street}
-                                    onSelect={handleAddressSelect} onClear={() => clearAddressFrom('street')}
-                                    loading={loading === 'street'} disabled={!selected.settle || loading === 'street'}
-                                    placeholder={loading === 'street' ? 'Загружаем улицы…' : 'Выберите улицу'} />
-                                {error === 'street' && <div className="address-level-error" role="alert">Не удалось загрузить список. <button type="button" onClick={() => selected.settle && void loadStreets(String(selected.settle.id))}>Повторить</button></div>}
-                                {selected.settle && loadedStreets && !error && !streets.length && <div className="address-level-empty">Ничего не найдено</div>}
-                            </div>
-
-                            <div className="lics-level-container">
-                                <label className="lics-level-label">Дом</label>
-                                <DropdownFilter label="Дом" options={houses} selected={selected.house}
-                                    onSelect={handleAddressSelect} onClear={() => clearAddressFrom('house')}
-                                    loading={loading === 'house'} disabled={!selected.street || loading === 'house'}
-                                    placeholder={loading === 'house' ? 'Загружаем дома…' : 'Выберите дом'} />
-                                {error === 'house' && <div className="address-level-error" role="alert">Не удалось загрузить список. <button type="button" onClick={() => selected.street && void loadHouses(String(selected.street.id))}>Повторить</button></div>}
-                                {selected.street && loadedHouses && !error && !houses.length && <div className="address-level-empty">Ничего не найдено</div>}
-                            </div>
-
-                            {selected.house?.type === 'build' && <div className="lics-level-container">
-                                <label className="lics-level-label">Квартира</label>
-                                <DropdownFilter label="Квартира" options={kv} selected={selected.kv}
-                                    onSelect={handleAddressSelect} onClear={() => clearAddressFrom('kv')}
-                                    placeholder="Выберите квартиру" />
-                                {!kv.length && <div className="address-level-empty">Ничего не найдено</div>}
-                            </div>}
-
-                            {((selected.house?.type === 'house') || selected.kv) && !lics.length && <div className="address-level-empty address-result-empty">По этому адресу лицевые счета не найдены.</div>}
-                            {lics.length > 1 && (selected.house?.type === 'house' || selected.kv) && <div ref={accountsRef} className="address-accounts">
+                            {searching && <div className="find-by-code-status" role="status">Ищем лицевые счета…</div>}
+                            {searchError && <div className="address-level-error" role="alert">Не удалось выполнить поиск. Измените адрес и попробуйте снова.</div>}
+                            {searched && !searching && !searchError && !results.length && <div className="address-level-empty address-result-empty">По этому адресу лицевые счета не найдены.</div>}
+                            {results.length > 0 && <div ref={accountsRef} className="address-accounts">
                                 <h3>Лицевые счета по адресу</h3>
-                                {lics.map((option) => <button type="button" key={String(option.id)} className="address-account-option" onClick={() => chooseAccount(option)}>
-                                    <span>{option.name}</span>
-                                    {option.record?.name && <small>{option.record.name}</small>}
+                                {results.map((hit, index) => <button type="button" key={`${hit.code}#${index}`} className="address-account-option" onClick={() => void chooseHit(hit)} disabled={openingCode === hit.code}>
+                                    <span>{hit.code}</span>
+                                    {hit.address_go && <small>{hit.address_go}</small>}
                                 </button>)}
                             </div>}
+                            {openingCode && <div className="find-by-code-status" role="status">Открываем лицевой счёт…</div>}
                             {codeError && <div className="find-by-code-error" role="alert">{codeError}</div>}
                             {foundCard}
                         </div>

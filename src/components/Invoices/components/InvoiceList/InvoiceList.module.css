@@ -239,7 +239,12 @@
 /* Three-pane field workbench: list, existing map, read-only worker context. */
 .content { width: 100%; max-width: none; padding: 0 24px; }
 .headingRow { flex: 0 0 auto; min-height: 96px; padding: 20px 0 17px; }
-.workArea { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(420px, 510px) minmax(0, 1fr) minmax(240px, 280px); gap: 12px; padding-bottom: 16px; }
+.workArea { flex: 1; min-height: 0; display: grid; grid-template-columns: var(--list-width, 480px) 12px minmax(0, 1fr) 12px var(--workers-width, 260px); gap: 0; padding-bottom: 16px; }
+.panelSplitter { position: relative; z-index: 2; width: 100%; height: 100%; min-width: 0; min-height: 0; border: 0; padding: 0; margin: 0; background: transparent; color: transparent; cursor: col-resize; touch-action: none; }
+.panelSplitter::before { content: ""; position: absolute; top: 18px; bottom: 18px; left: 50%; width: 4px; transform: translateX(-50%); border-radius: 999px; background: var(--stng-border); }
+.panelSplitter:hover::before, .panelSplitter:focus-visible::before { background: var(--stng-brand-blue); }
+.workAreaResizing { cursor: col-resize; }
+.workAreaResizing .listPanel, .workAreaResizing .mapPanel, .workAreaResizing .workersPanel { pointer-events: none; user-select: none; }
 .listPanel, .mapPanel, .workersPanel { min-width: 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--stng-border); border-radius: var(--stng-radius-lg); overflow: hidden; background: var(--stng-surface); }
 .listPanel { background: var(--stng-bg); }
 .listControls { flex: 0 0 auto; padding: 16px 15px 0; border-bottom: 1px solid var(--stng-border); background: var(--stng-surface); }
@@ -261,8 +266,9 @@
 .panelHeader span { color: var(--stng-text-muted); font-size: 12px; }
 .mapCanvas { flex: 1; min-height: 0; border: 0; border-radius: 0; }
 .workersList { flex: 1; min-height: 0; overflow-y: auto; padding: 9px; }
-.workerRow { display: flex; align-items: flex-start; gap: 10px; padding: 11px 9px; border-bottom: 1px solid #e3eef4; }
+.workerRow { width: 100%; display: flex; align-items: flex-start; gap: 10px; padding: 11px 9px; border: 0; border-bottom: 1px solid #e3eef4; border-radius: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .workerRow:last-child { border-bottom: 0; }
+.workerRowSelected { background: #e8f4fa; box-shadow: inset 3px 0 0 var(--stng-brand-blue); }
 .workerIcon { flex: 0 0 35px; height: 35px; display: grid; place-items: center; border-radius: 10px; background: #e8f4fa; color: var(--stng-brand-blue); font-size: 18px; }
 .workerText { min-width: 0; display: grid; gap: 3px; }
 .workerText strong { font-size: 13px; line-height: 1.25; overflow-wrap: anywhere; }
@@ -271,19 +277,18 @@
 .mobileDock { display: none; }
 @media (min-width: 2200px) {
   .content { width: 100%; padding-inline: 36px; }
-  .workArea { grid-template-columns: minmax(530px, 620px) minmax(0, 1fr) 320px; gap: 16px; }
   .headingRow { min-height: 105px; }
   .listControls { padding: 19px 18px 0; }
   .listScroll { padding: 15px; }
 }
 @media (min-width: 1181px) and (max-width: 1450px) {
-  .workArea { grid-template-columns: minmax(390px, 430px) minmax(0, 1fr) 245px; gap: 9px; }
   .content { padding-inline: 16px; }
 }
 @media (max-width: 1180px) {
   .content { padding-inline: 16px; }
   .headingRow { min-height: 84px; padding: 14px 0 12px; }
   .workArea { display: flex; padding-bottom: 0; }
+  .panelSplitter { display: none; }
   .listPanel, .mapPanel, .workersPanel { flex: 1; }
   .hideOnSmall { display: none; }
   .listControls { padding: 13px 14px 0; }

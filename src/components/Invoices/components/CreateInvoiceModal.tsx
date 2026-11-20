@@ -9,9 +9,10 @@ import {
   trashOutline,
 } from 'ionicons/icons';
 
-import { getLic, getWorks, getWorkTypes, WorkType, WorkKind } from '../../../Store/api';
+import { getLic, WorkType } from '../../../Store/api';
 import { saveInvoice } from '../../../Store/invoiceStore';
 import { useToken } from '../../../Store/loginStore';
+import { useWorksStore } from '../../../Store/worksStore';
 import { useLicsStore } from '../../../Store/licsStore';
 import { useToast } from '../../Toast';
 import { getDisplayAddress } from '../../../utils/format';
@@ -90,8 +91,10 @@ const makeWorkRow = (eq: any, workType?: WorkType | null) => {
   const basePrice = 0;
   const price = Number(workType?.price) || 0;
   const sum = Math.round(amount * price * 100) / 100;
+  const id = newWorkId();
   return {
-    id: newWorkId(),
+    id,
+    rowKey: id,
     equip_id: String(eq.id || eq.equip_id || ''),
     work_id: workType?.id || '',
     work: workType?.name || '',
@@ -126,12 +129,14 @@ const mapInvoiceWorks = (raw: any) => {
     try { list = JSON.parse(list); } catch { list = []; }
   }
   if (!Array.isArray(list)) return [];
-  return list.map((w: any) => {
+  return list.map((w: any, index: number) => {
     const amount = Number(w.amount) > 0 ? Number(w.amount) : 1;
     const price = Number(w.price) || 0;
     const sum = Number(w.sum) || Math.round(amount * price * 100) / 100;
+    const id = String(w.id || '').trim();
     return {
-      id: String(w.id || newWorkId()),
+      id,
+      rowKey: id ? `${id}#${index}` : newWorkId(),
       equip_id: String(w.equip_id || w.equipment_id || ''),
       work_id: String(w.work_id || ''),
       work: String(w.work || ''),
@@ -206,10 +211,10 @@ export default function CreateInvoiceModal({
 
   const [executorId, setExecutorId] = useState<string>('');
   const [status, setStatus] = useState<string>('Новый');
-  const [priceWorks, setPriceWorks] = useState<WorkType[]>([]);
-  const [worksLoading, setWorksLoading] = useState(false);
-  const [workKinds, setWorkKinds] = useState<WorkKind[]>([]);
-  const [workKindsLoading, setWorkKindsLoading] = useState(false);
+  const priceWorks = useWorksStore((state) => state.works);
+  const worksLoading = useWorksStore((state) => state.worksLoading);
+  const workKinds = useWorksStore((state) => state.workTypes);
+  const workKindsLoading = useWorksStore((state) => state.workTypesLoading);
   const [workKindId, setWorkKindId] = useState('');
   const [workKindName, setWorkKindName] = useState('');
 
@@ -339,38 +344,7 @@ export default function CreateInvoiceModal({
 
   useEffect(() => {
     if (!isOpen || !token) return;
-
-    let cancelled = false;
-    setWorksLoading(true);
-    setWorkKindsLoading(true);
-
-    void getWorks(token)
-      .then((res) => {
-        if (cancelled) return;
-        setPriceWorks(res.ok ? res.data : []);
-      })
-      .catch(() => {
-        if (!cancelled) setPriceWorks([]);
-      })
-      .finally(() => {
-        if (!cancelled) setWorksLoading(false);
-      });
-
-    void getWorkTypes(token)
-      .then((res) => {
-        if (cancelled) return;
-        setWorkKinds(res.ok ? res.data : []);
-      })
-      .catch(() => {
-        if (!cancelled) setWorkKinds([]);
-      })
-      .finally(() => {
-        if (!cancelled) setWorkKindsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    void useWorksStore.getState().loadCatalog(token);
   }, [isOpen, token]);
 
   useEffect(() => {
@@ -390,10 +364,10 @@ export default function CreateInvoiceModal({
     [priceWorks, priceSearch]
   );
 
-  const patchWork = (id: string, patch: Record<string, any>) => {
+  const patchWork = (rowKey: string, patch: Record<string, any>) => {
     setInvoiceWorks((prev) =>
       prev.map((row) => {
-        if (row.id !== id) return row;
+        if (row.rowKey !== rowKey) return row;
         const next = { ...row, ...patch };
         const amount = Number(next.amount) > 0 ? Number(next.amount) : 1;
         const price = Number(next.price) || 0;
@@ -407,19 +381,19 @@ export default function CreateInvoiceModal({
     if (!lic?.id) return;
     const row = makeWorkRow(accountEquipments.length === 1 ? accountEquipments[0] : {});
     setInvoiceWorks((prev) => [...prev, row]);
-    setOpenWorkId(row.id);
+    setOpenWorkId(row.rowKey);
     setPriceListOpen(true);
     setPriceSearch('');
     setValidationErrors((prev) => ({ ...prev, works: '' }));
     requestAnimationFrame(() => {
-      document.getElementById(`work-row-${row.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      document.getElementById(`work-search-${row.id}`)?.focus({ preventScroll: true });
+      document.getElementById(`work-row-${row.rowKey}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      document.getElementById(`work-search-${row.rowKey}`)?.focus({ preventScroll: true });
     });
   };
 
-  const removeWork = (id: string) => {
-    setInvoiceWorks((prev) => prev.filter((row) => row.id !== id));
-    if (openWorkId === id) {
+  const removeWork = (rowKey: string) => {
+    setInvoiceWorks((prev) => prev.filter((row) => row.rowKey !== rowKey));
+    if (openWorkId === rowKey) {
       setOpenWorkId('');
       setPriceListOpen(false);
     }
@@ -984,7 +958,7 @@ export default function CreateInvoiceModal({
                   {accountEquipments.length > 0 ? (
                     <div className="worksEquipmentList">
                       {accountEquipments.map((eq: any, index) => (
-                        <div className="worksEquipmentItem" key={String(eq.id || eq.equip_id || index)}>
+                        <div className="worksEquipmentItem" key={`${String(eq.id || eq.equip_id || 'eq')}#${index}`}>
                           <IonIcon icon={constructOutline} aria-hidden="true" />
                           <strong>{equipLabel(eq) || 'Оборудование без названия'}</strong>
                         </div>
@@ -1010,13 +984,13 @@ export default function CreateInvoiceModal({
                   ) : (
                     <div className="worksRows">
                       {invoiceWorks.map((row, index) => {
-                        const isOpenRow = openWorkId === row.id && priceListOpen;
+                        const isOpenRow = openWorkId === row.rowKey && priceListOpen;
                         const equipment = accountEquipments.find((eq: any) => String(eq.id || eq.equip_id || '') === String(row.equip_id || ''));
                         return (
-                          <article id={`work-row-${row.id}`} key={row.id} className={`worksRow ${row.work_id ? 'worksRowReady' : 'worksRowPending'}`}>
+                          <article id={`work-row-${row.rowKey}`} key={row.rowKey} className={`worksRow ${row.work_id ? 'worksRowReady' : 'worksRowPending'}`}>
                             <div className="worksRowHeader">
                               <div><span>Работа {index + 1}</span><strong>{row.work || 'Работа не выбрана'}</strong></div>
-                              <button type="button" className="worksRowDelete" onClick={() => removeWork(row.id)} aria-label={`Удалить работу ${index + 1}`} title="Удалить работу">
+                              <button type="button" className="worksRowDelete" onClick={() => removeWork(row.rowKey)} aria-label={`Удалить работу ${index + 1}`} title="Удалить работу">
                                 <IonIcon icon={trashOutline} aria-hidden="true" />
                               </button>
                             </div>
@@ -1024,7 +998,7 @@ export default function CreateInvoiceModal({
                               <div className="worksRowPicker">
                                 <span className="worksControlLabel">Прейскурант <b>*</b></span>
                                 <button type="button" className="worksPickerButton" onClick={() => {
-                                  setOpenWorkId(isOpenRow ? '' : row.id);
+                                  setOpenWorkId(isOpenRow ? '' : row.rowKey);
                                   setPriceListOpen(!isOpenRow);
                                   setPriceSearch('');
                                 }} aria-expanded={isOpenRow} aria-label={`Выбрать работу по прейскуранту для строки ${index + 1}`}>
@@ -1032,11 +1006,11 @@ export default function CreateInvoiceModal({
                                   {worksLoading ? <IonSpinner name="dots" /> : <IonIcon icon={chevronDownOutline} aria-hidden="true" />}
                                 </button>
                                 {isOpenRow && <div className="worksPickerMenu">
-                                  <input id={`work-search-${row.id}`} type="search" autoFocus aria-label="Поиск по прейскуранту" placeholder="Найти работу" value={priceSearch} onChange={(e) => setPriceSearch(e.target.value)} />
-                                  {worksLoading ? <p>Загрузка…</p> : filteredPriceWorks.length === 0 ? <p>{priceWorks.length ? 'Ничего не найдено' : 'Прейскурант пуст'}</p> : filteredPriceWorks.map((work) => (
-                                    <button type="button" key={work.id} className={row.work_id === work.id ? 'worksPickerSelected' : ''} onClick={() => {
+                                  <input id={`work-search-${row.rowKey}`} type="search" autoFocus aria-label="Поиск по прейскуранту" placeholder="Найти работу" value={priceSearch} onChange={(e) => setPriceSearch(e.target.value)} />
+                                  {worksLoading ? <p>Загрузка…</p> : filteredPriceWorks.length === 0 ? <p>{priceWorks.length ? 'Ничего не найдено' : 'Прейскурант пуст'}</p> : filteredPriceWorks.map((work, workIndex) => (
+                                    <button type="button" key={`${work.id}#${workIndex}`} className={row.work_id === work.id ? 'worksPickerSelected' : ''} onClick={() => {
                                       setValidationErrors((prev) => ({ ...prev, works: '' }));
-                                      patchWork(row.id, { work_id: work.id, work: work.name, price: Number(work.price) || 0 });
+                                      patchWork(row.rowKey, { work_id: work.id, work: work.name, price: Number(work.price) || 0 });
                                       setPriceListOpen(false);
                                       setOpenWorkId('');
                                       setPriceSearch('');
@@ -1049,16 +1023,16 @@ export default function CreateInvoiceModal({
                                 {accountEquipments.length > 1 ? (
                                   <select value={String(row.equip_id || '')} aria-label={`Оборудование для работы ${index + 1}`} onChange={(e) => {
                                     const selected = accountEquipments.find((eq: any) => String(eq.id || eq.equip_id || '') === e.target.value);
-                                    patchWork(row.id, { equip_id: e.target.value, equipment: selected ? equipLabel(selected) : '' });
+                                    patchWork(row.rowKey, { equip_id: e.target.value, equipment: selected ? equipLabel(selected) : '' });
                                   }}>
                                     <option value="">Без оборудования</option>
-                                    {accountEquipments.map((eq: any, eqIndex) => <option key={String(eq.id || eq.equip_id || eqIndex)} value={String(eq.id || eq.equip_id || '')}>{equipLabel(eq) || 'Оборудование без названия'}</option>)}
+                                    {accountEquipments.map((eq: any, eqIndex) => <option key={`${String(eq.id || eq.equip_id || 'eq')}#${eqIndex}`} value={String(eq.id || eq.equip_id || '')}>{equipLabel(eq) || 'Оборудование без названия'}</option>)}
                                   </select>
                                 ) : <div className="worksEquipmentValue">{equipment ? equipLabel(equipment) : row.equipment || 'Без оборудования'}</div>}
                               </div>
                               <label className="worksRowQuantity">
                                 <span className="worksControlLabel">Количество</span>
-                                <input type="number" min="1" step="1" inputMode="numeric" value={row.amount} onChange={(e) => patchWork(row.id, { amount: Math.max(1, Number(e.target.value) || 1) })} aria-label={`Количество для работы ${index + 1}`} />
+                                <input type="number" min="1" step="1" inputMode="numeric" value={row.amount} onChange={(e) => patchWork(row.rowKey, { amount: Math.max(1, Number(e.target.value) || 1) })} aria-label={`Количество для работы ${index + 1}`} />
                               </label>
                               <div className="worksRowAmount">
                                 <span className="worksControlLabel">Цена · Сумма</span>

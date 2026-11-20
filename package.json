@@ -13,6 +13,7 @@
     "deploy": "scp -r ./dist/* atlasov@89.108.98.207:/var/www/html"
   },
   "dependencies": {
+    "socket.io-client": "^4.8.4",
     "@capacitor/app": "7.1.0",
     "@capacitor/core": "7.4.3",
     "@capacitor/haptics": "7.0.2",

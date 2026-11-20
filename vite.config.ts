@@ -12,6 +12,7 @@ export default defineConfig({
         target: 'https://fhd.aostng.ru',
         changeOrigin: true,
         secure: false,
+        ws: true,
         timeout: 20000,
         proxyTimeout: 20000,
         configure: (proxy) => {

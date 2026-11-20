@@ -12,6 +12,9 @@ export interface WorkerData {
     rating:         number;
     in_work:        number;
     completed:      number;
+    lat?:           number;
+    lon?:           number;
+    location_updated_at?: string;
 }
 
 export const useNavigationStore = create<any>()(

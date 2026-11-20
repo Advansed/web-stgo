@@ -2,6 +2,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// Drop a previous session before hydration so a saved token cannot sign the user in.
+if (typeof window !== 'undefined') {
+  window.localStorage.removeItem('ads-auth-storage');
+}
 
 export const useLoginStore = create<any>()(
   persist(
@@ -30,11 +34,13 @@ export const useLoginStore = create<any>()(
         token: state.token,
         auth:  state.auth,
       }),
-      // Restore auth in Zustand's merge step so subscribers receive the restored state.
-      merge: (persistedState, currentState) => {
-        const stored = (persistedState ?? {}) as Record<string, unknown>;
-        return { ...currentState, ...stored, auth: Boolean(stored.token) };
-      },
+      // A stored token must not open the app. Login is only the form button.
+      merge: (_persistedState, currentState) => ({
+        ...currentState,
+        auth: false,
+        token: null,
+        user: null,
+      }),
     }
   )
 );

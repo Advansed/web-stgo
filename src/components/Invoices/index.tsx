@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -9,10 +9,10 @@ import {
 import { useInvoices } from '../../Store/invoiceStore';
 import { useToken } from '../../Store/loginStore';
 import { useWorkers } from '../../Store/navigationStore';
-import Maps, { MapLoadState, MapMetrics } from '../Maps/Maps';
+import Maps, { MapLoadState, MapMetrics, workerLocationLabel } from '../Maps/Maps';
 import CreateInvoiceModal from './components/CreateInvoiceModal';
 import InvoiceItem from './components/InvoiceList/InvoiceItem';
-import { InvoiceFilter, formatDeadline, invoiceAddress, invoiceStatus, isInvoiceOverdue, matchesInvoiceFilter, matchesInvoiceSearch } from './invoicePresentation';
+import { InvoiceFilter, formatDeadline, invoiceAddress, invoiceStatus, isInvoiceOverdue, matchesInvoiceFilter, matchesInvoiceSearch, matchesInvoiceWorker } from './invoicePresentation';
 import styles from './components/InvoiceList/InvoiceList.module.css';
 
 type ModalMode = 'none' | 'view' | 'create';
@@ -31,6 +31,21 @@ const localDay = () => {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
 };
 
+const PANE_SPLIT = 12;
+const MIN_LIST = 280;
+const MIN_WORKERS = 200;
+const MIN_MAP = 240;
+
+const initialPaneWidths = () => {
+  const width = typeof window === 'undefined' ? 1400 : window.innerWidth;
+  if (width >= 2200) return { list: 560, workers: 320 };
+  if (width <= 1450) return { list: 410, workers: 245 };
+  return { list: 480, workers: 260 };
+};
+
+const clampPane = (value: number, min: number, max: number) =>
+  Math.round(Math.min(Math.max(value, min), Math.max(min, max)));
+
 const Invoices: React.FC = () => {
   const history = useHistory<InvoiceNavigationState>();
   const openInvoiceId = history.location.state?.openInvoiceId;
@@ -48,6 +63,48 @@ const Invoices: React.FC = () => {
   const [fitRequest, setFitRequest] = useState(0);
   const [zoomRequest, setZoomRequest] = useState<{ step: number; direction: 1 | -1 }>({ step: 0, direction: 1 });
   const [retryRequest, setRetryRequest] = useState(0);
+  const [selectedWorkerId, setSelectedWorkerId] = useState('');
+  const workAreaRef = useRef<HTMLDivElement>(null);
+  const [paneWidths, setPaneWidths] = useState(initialPaneWidths);
+  const paneWidthsRef = useRef(paneWidths);
+  paneWidthsRef.current = paneWidths;
+
+  const resizePane = (side: 'list' | 'workers', event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const handle = event.currentTarget;
+    const area = workAreaRef.current;
+    if (!area) return;
+    const pointerId = event.pointerId;
+    const startX = event.clientX;
+    const start = paneWidthsRef.current;
+    handle.setPointerCapture(pointerId);
+    area.classList.add(styles.workAreaResizing);
+
+    const move = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      const width = area.getBoundingClientRect().width;
+      const dx = ev.clientX - startX;
+      const gutter = PANE_SPLIT * 2;
+      if (side === 'list') {
+        const max = width - start.workers - MIN_MAP - gutter;
+        setPaneWidths((prev) => ({ ...prev, list: clampPane(start.list + dx, MIN_LIST, max) }));
+      } else {
+        const max = width - start.list - MIN_MAP - gutter;
+        setPaneWidths((prev) => ({ ...prev, workers: clampPane(start.workers - dx, MIN_WORKERS, max) }));
+      }
+    };
+    const end = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      area.classList.remove(styles.workAreaResizing);
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', end);
+      handle.removeEventListener('pointercancel', end);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  };
   const [selected, setSelected] = useState<any>(null);
   const [mode, setMode] = useState<ModalMode>('none');
 
@@ -81,8 +138,19 @@ const Invoices: React.FC = () => {
     completed: invoices.filter((invoice: any) => invoiceStatus(invoice).completed).length,
   }), [invoices, today]);
 
+  const selectedWorker = useMemo(
+    () => workers.find((worker: any) => String(worker.id) === selectedWorkerId) || null,
+    [workers, selectedWorkerId]
+  );
+  const mapWorkers = useMemo(
+    () => (selectedWorkerId ? (selectedWorker ? [selectedWorker] : []) : workers),
+    [selectedWorkerId, selectedWorker, workers]
+  );
+
   const visibleInvoices = useMemo(() => invoices
-    .filter((invoice: any) => matchesInvoiceFilter(invoice, filter, today) && matchesInvoiceSearch(invoice, query))
+    .filter((invoice: any) => matchesInvoiceFilter(invoice, filter, today)
+      && matchesInvoiceSearch(invoice, query)
+      && matchesInvoiceWorker(invoice, selectedWorker || (selectedWorkerId ? { id: selectedWorkerId } : null)))
     .sort((a: any, b: any) => {
       const priority = (invoice: any) => isInvoiceOverdue(invoice, today) ? 0 : invoiceStatus(invoice).open ? 1 : invoiceStatus(invoice).completed ? 3 : 2;
       const rank = priority(a) - priority(b);
@@ -93,7 +161,7 @@ const Invoices: React.FC = () => {
       if (dueA && !dueB) return -1;
       if (!dueA && dueB) return 1;
       return String(b.date || '').localeCompare(String(a.date || ''));
-    }), [invoices, filter, query, today]);
+    }), [invoices, filter, query, today, selectedWorker, selectedWorkerId]);
 
   const refresh = () => {
     if (token) void loadInvoices(token, true);
@@ -117,8 +185,8 @@ const Invoices: React.FC = () => {
     ? 'Загружаем заявки'
     : isUnavailable
       ? 'Данные недоступны'
-      : query || filter !== 'all'
-        ? `Найдено: ${visibleInvoices.length} из ${invoices.length}`
+      : query || filter !== 'all' || selectedWorker
+        ? `Найдено: ${visibleInvoices.length} из ${invoices.length}${selectedWorker ? ` · ${selectedWorker.name || 'Сотрудник'}` : ''}`
         : `Всего заявок: ${invoices.length}`;
 
   return (
@@ -140,7 +208,11 @@ const Invoices: React.FC = () => {
           </div>
         </header>
 
-        <div className={styles.workArea}>
+        <div
+          ref={workAreaRef}
+          className={styles.workArea}
+          style={{ ['--list-width' as string]: `${paneWidths.list}px`, ['--workers-width' as string]: `${paneWidths.workers}px` }}
+        >
           <section className={`${styles.listPanel} ${view !== 'list' ? styles.hideOnSmall : ''}`} aria-label="Список и поиск заявок">
             <div className={styles.listControls}>
               <div className={styles.searchRow}>
@@ -210,23 +282,32 @@ const Invoices: React.FC = () => {
                 </div>
               ) : !isUnavailable && (
                 <div className={styles.emptyState}>
-                  <strong>{query ? 'По запросу ничего не найдено' : filter !== 'all' ? 'Нет заявок с выбранным фильтром' : 'Заявок пока нет'}</strong>
-                  <p>{query ? 'Проверьте номер, адрес или описание.' : filter !== 'all' ? 'Попробуйте другой статус или покажите все заявки.' : 'Новые заявки появятся здесь после загрузки из системы.'}</p>
-                  {query ? <button type="button" onClick={() => setQuery('')}>Очистить поиск</button> : filter !== 'all' ? <button type="button" onClick={() => setFilter('all')}>Сбросить фильтр</button> : null}
+                  <strong>{query ? 'По запросу ничего не найдено' : selectedWorker ? `Нет заявок у ${selectedWorker.name || 'сотрудника'}` : filter !== 'all' ? 'Нет заявок с выбранным фильтром' : 'Заявок пока нет'}</strong>
+                  <p>{query ? 'Проверьте номер, адрес или описание.' : selectedWorker ? 'Выберите другого сотрудника или снимите фильтр.' : filter !== 'all' ? 'Попробуйте другой статус или покажите все заявки.' : 'Новые заявки появятся здесь после загрузки из системы.'}</p>
+                  {query ? <button type="button" onClick={() => setQuery('')}>Очистить поиск</button> : selectedWorker ? <button type="button" onClick={() => setSelectedWorkerId('')}>Сбросить сотрудника</button> : filter !== 'all' ? <button type="button" onClick={() => setFilter('all')}>Сбросить фильтр</button> : null}
                 </div>
               )}
             </div>
           </section>
 
+          <button
+            type="button"
+            className={styles.panelSplitter}
+            aria-label="Граница списка и карты"
+            aria-orientation="vertical"
+            onPointerDown={(event) => resizePane('list', event)}
+          />
+
           <section className={`${styles.mapPanel} ${view !== 'map' ? styles.hideOnSmall : ''}`} aria-label="Карта заявок">
             <div className={styles.panelHeader}>
               <div className={styles.mapHeading}>
                 <strong>Карта заявок</strong>
-                <span>{isUnavailable ? 'Данные недоступны' : `На карте: ${mapMetrics.plotted} из ${visibleInvoices.length}`}{(filter !== 'all' || query) && <b className={styles.mapAppliedFilter}> · {filter !== 'all' ? filterLabel : 'Поиск'}</b>}</span>
+                <span>{isUnavailable ? 'Данные недоступны' : `На карте: ${mapMetrics.plotted} из ${visibleInvoices.length}`}{(filter !== 'all' || query || selectedWorker) && <b className={styles.mapAppliedFilter}> · {[filter !== 'all' ? filterLabel : '', query ? 'Поиск' : '', selectedWorker?.name || ''].filter(Boolean).join(' · ')}</b>}</span>
               </div>
               <div className={styles.mapHeaderActions}>
                 {filter !== 'all' && <span className={styles.mapFilterIndicator}>{filterLabel}</span>}
                 {query && <span className={styles.mapFilterIndicator}>Поиск</span>}
+                {selectedWorker && <span className={styles.mapFilterIndicator}>{selectedWorker.name || 'Сотрудник'}</span>}
                 <button className={styles.mapListAction} type="button" onClick={() => setView('list')} aria-label="К списку заявок">К списку</button>
                 <button className={styles.mapFitAction} type="button" onClick={() => setFitRequest((value) => value + 1)} disabled={mapStatus !== 'ready' || mapMetrics.plotted === 0} aria-label="Показать все заявки на карте">
                   <IonIcon icon={locateOutline} aria-hidden="true" /><span>Показать все</span>
@@ -236,6 +317,7 @@ const Invoices: React.FC = () => {
             <div className={styles.mapCanvas}>
               <Maps
                 invoices={visibleInvoices}
+                workers={mapWorkers}
                 selectedId={mapSelection?.id}
                 onSelectInvoice={setMapSelection}
                 onStatusChange={setMapStatus}
@@ -252,8 +334,8 @@ const Invoices: React.FC = () => {
                 <div className={styles.mapOverlay} role="status">
                   <IonIcon icon={mapOutline} aria-hidden="true" />
                   <strong>Нет заявок для отображения</strong>
-                  <span>{query ? 'Измените или очистите поиск в списке.' : filter !== 'all' ? 'Сбросьте фильтр в списке заявок.' : 'Когда появятся заявки, их расположение будет показано здесь.'}</span>
-                  {(query || filter !== 'all') && <button type="button" onClick={() => setView('list')}>К списку заявок</button>}
+                  <span>{query ? 'Измените или очистите поиск в списке.' : selectedWorker ? `Нет заявок у ${selectedWorker.name || 'сотрудника'}.` : filter !== 'all' ? 'Сбросьте фильтр в списке заявок.' : 'Когда появятся заявки, их расположение будет показано здесь.'}</span>
+                  {(query || filter !== 'all' || selectedWorker) && <button type="button" onClick={() => setView('list')}>К списку заявок</button>}
                 </div>
               ) : mapStatus !== 'ready' || initialLoading || isUnavailable ? (
                 <div className={styles.mapOverlay} role="status">
@@ -283,15 +365,34 @@ const Invoices: React.FC = () => {
             </div>
           </section>
 
+          <button
+            type="button"
+            className={styles.panelSplitter}
+            aria-label="Граница карты и сотрудников"
+            aria-orientation="vertical"
+            onPointerDown={(event) => resizePane('workers', event)}
+          />
+
           <aside className={`${styles.workersPanel} ${view !== 'workers' ? styles.hideOnSmall : ''}`} aria-label="Сотрудники">
             <div className={styles.panelHeader}><strong>Сотрудники</strong><span>{workers.length}</span></div>
             <div className={styles.workersList}>
-              {workers.length > 0 ? workers.map((worker: any) => <div className={styles.workerRow} key={worker.id}>
-                <span className={styles.workerIcon}><IonIcon icon={personOutline} aria-hidden="true" /></span>
-                <span className={styles.workerText}><strong>{worker.name || 'Без имени'}</strong><small>{worker.role || 'Сотрудник'}</small>
-                  {(worker.in_work != null || worker.completed != null) && <small>{worker.in_work != null ? `В работе: ${worker.in_work}` : ''}{worker.in_work != null && worker.completed != null ? ' · ' : ''}{worker.completed != null ? `Завершено: ${worker.completed}` : ''}</small>}
-                </span>
-              </div>) : <p className={styles.workersEmpty}>Данные о сотрудниках пока недоступны.</p>}
+              {workers.length > 0 ? workers.map((worker: any, index: number) => {
+                const workerId = String(worker.id || '');
+                const selected = workerId !== '' && workerId === selectedWorkerId;
+                return <button
+                  type="button"
+                  className={`${styles.workerRow} ${selected ? styles.workerRowSelected : ''}`}
+                  key={workerId ? `${workerId}#${index}` : `worker#${index}`}
+                  aria-pressed={selected}
+                  onClick={() => setSelectedWorkerId(selected ? '' : workerId)}
+                >
+                  <span className={styles.workerIcon}><IonIcon icon={personOutline} aria-hidden="true" /></span>
+                  <span className={styles.workerText}><strong>{worker.name || 'Без имени'}</strong><small>{worker.role || 'Сотрудник'}</small>
+                    {(worker.in_work != null || worker.completed != null) && <small>{worker.in_work != null ? `В работе: ${worker.in_work}` : ''}{worker.in_work != null && worker.completed != null ? ' · ' : ''}{worker.completed != null ? `Завершено: ${worker.completed}` : ''}</small>}
+                    <small>{workerLocationLabel(worker)}</small>
+                  </span>
+                </button>;
+              }) : <p className={styles.workersEmpty}>Данные о сотрудниках пока недоступны.</p>}
             </div>
           </aside>
         </div>

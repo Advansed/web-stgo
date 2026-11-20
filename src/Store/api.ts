@@ -172,6 +172,43 @@ export async function delLic(token: string, lc: string) {
   return post('del_lic', { token, lc });
 }
 
+// --- Поиск лицевого счёта по адресу ---
+const asList = (raw: any): any[] => {
+  let value = raw;
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value); } catch { value = []; }
+  }
+  if (value && !Array.isArray(value) && Array.isArray(value.data)) value = value.data;
+  return Array.isArray(value) ? value : [];
+};
+
+const plotLabel = (item: any): string => {
+  if (typeof item === 'string' || typeof item === 'number') return String(item).trim();
+  return String(item?.plot ?? item?.name ?? item?.title ?? '').trim();
+};
+
+export async function getPlots(token: string) {
+  const res = await post('mp_plots', { token });
+  const data = [...new Set(asList(res?.data).map(plotLabel).filter(Boolean))];
+  return { ...res, ok: isApiOk(res), data };
+}
+
+export interface FoundLicByAddress {
+  code: string;
+  address_go: string;
+  plot: string;
+}
+
+export async function findLicsByAddress(token: string, plot: string, address: string) {
+  const res = await post('mp_find_lics', { token, plot, address });
+  const data: FoundLicByAddress[] = asList(res?.data).map((item: any) => ({
+    code: String(item?.code ?? '').trim(),
+    address_go: String(item?.address_go ?? item?.address ?? '').trim(),
+    plot: String(item?.plot ?? plot).trim(),
+  })).filter((item: FoundLicByAddress) => item.code);
+  return { ...res, ok: isApiOk(res), data };
+}
+
 // --- Адресный справочник ---
 export async function getSettlements(token: string) {
   return getData('getSettlements', { token });

@@ -62,3 +62,20 @@ export const matchesInvoiceFilter = (invoice: any, filter: InvoiceFilter, today:
   if (filter === 'completed') return invoiceStatus(invoice).completed;
   return isInvoiceOverdue(invoice, today);
 };
+
+const sameText = (left: unknown, right: unknown) => {
+  const a = String(left || '').trim();
+  const b = String(right || '').trim();
+  return !!a && !!b && a.localeCompare(b, 'ru-RU', { sensitivity: 'accent' }) === 0;
+};
+
+export const matchesInvoiceWorker = (invoice: any, worker: { id?: string; name?: string } | null): boolean => {
+  const workerId = String(worker?.id || '').trim();
+  if (!workerId) return true;
+  const executor = invoice?.executor;
+  const linkedId = invoice?.worker?.id;
+  if (sameText(executor, workerId) || sameText(linkedId, workerId)) return true;
+  const hasId = String(executor || '').trim() || String(linkedId || '').trim();
+  if (!hasId) return sameText(invoice?.worker?.name, worker?.name);
+  return false;
+};
